@@ -18,6 +18,7 @@ import { Obsidian } from "../apps/Obsidian";
 import { ClaudeTerminal } from "../apps/ClaudeTerminal";
 import { Spotify } from "../apps/Spotify";
 import { Startup } from "../apps/Startup";
+import { Photos } from "../apps/Photos";
 import { Notes } from "../apps/Notes";
 import { AboutEditor } from "../apps/AboutEditor";
 import { Mail } from "../apps/Mail";
@@ -176,6 +177,8 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
           return <Spotify />;
         case "startup":
           return <Startup />;
+        case "photos":
+          return <Photos />;
         case "notes":
           return <Notes />;
         case "editor":

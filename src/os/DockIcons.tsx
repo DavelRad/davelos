@@ -15,6 +15,7 @@ const ICON: Partial<Record<AppId, string>> = {
   obsidian: "/icons/obsidian.png",
   terminal: "/icons/claude.png", // Claude.app — the "Claude Code" session
   spotify: "/icons/spotify.png",
+  photos: "/icons/photos.png", // real macOS Photos.app icon
   notes: "/icons/stickies.png", // Stickies.app
   editor: "/icons/vscode.png", // Visual Studio Code
   mail: "/icons/mail.png",

@@ -14,6 +14,7 @@ export type AppId =
   | "terminal"
   | "spotify"
   | "startup"
+  | "photos"
   | "notes"
   | "editor"
   | "mail"

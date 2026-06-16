@@ -8,6 +8,7 @@ import {
   FileText,
   BookText,
   Github,
+  Images,
 } from "lucide-react";
 import type { AppId, AppMeta } from "./types";
 import { SpotifyGlyph } from "./brandIcons";
@@ -56,6 +57,15 @@ export const APPS: Record<AppId, AppMeta> = {
     tint: "#fb651e",
     defaults: { x: 0.34, y: 0.3, w: 0.46, h: 0.66 },
     min: { w: 420, h: 380 },
+  },
+  photos: {
+    id: "photos",
+    name: "Photos",
+    longName: "Photos — Davel's albums",
+    icon: Images,
+    tint: "#2a2a2e",
+    defaults: { x: 0.18, y: 0.12, w: 0.56, h: 0.74 },
+    min: { w: 480, h: 380 },
   },
   notes: {
     id: "notes",
@@ -122,6 +132,7 @@ export const DOCK_ORDER: AppId[] = [
   "terminal",
   "spotify",
   "startup",
+  "photos",
   "notes",
   "editor",
   "mail",

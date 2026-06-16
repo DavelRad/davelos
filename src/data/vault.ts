@@ -56,7 +56,7 @@ with [[About]], see what I'm shipping in [[Now]], or jump to [[Nogic]].
 > [[LandDrop]] · [[Databae]] · [[htmlnote]] · [[Particle]] · [[HoloChat]] · [[More Projects]]
 
 > [!tip] Reference
-> 🧰 [[Stack]] — languages, frameworks, infra · 📬 [[Contact]] · 🌄 [[Life]]
+> 🧰 [[Stack]] — languages, frameworks, infra · 📬 [[Contact]]
 
 #ai-dev-tools #agentic-systems #san-francisco`;
 
@@ -405,15 +405,6 @@ const CONTACT = `# Contact
 
 Back to [[About]] · [[Home]].`;
 
-const LIFE = `# Life
-
-> [!quote] Outside the terminal
-> Hiking, chess, live music, a lot of café work — and far too much time on X.
-
-![gallery](gallery:life)
-
-Back to [[About]] · [[Home]].`;
-
 /* ------------------------------ the vault ------------------------------ */
 
 export const vaultNotes: VaultNote[] = [
@@ -530,7 +521,6 @@ export const vaultNotes: VaultNote[] = [
   { title: "More Projects", folder: "Projects", body: MORE_PROJECTS, tags: ["misc"] },
   { title: "Stack", folder: "", body: STACK, tags: ["reference", "toolkit"] },
   { title: "Contact", folder: "", body: CONTACT, tags: ["contact"] },
-  { title: "Life", folder: "", body: LIFE, tags: ["life", "gallery"] },
 ];
 
 /** Folder tree for the file explorer (order matters). */
@@ -542,7 +532,7 @@ export const vaultTree: VaultFolder[] = [
     notes: ["LandDrop", "Databae", "htmlnote", "Particle", "HoloChat", "More Projects"],
   },
   // top-level notes (folder === "")
-  { name: "", notes: ["Home", "Stack", "Contact", "Life"] },
+  { name: "", notes: ["Home", "Stack", "Contact"] },
 ];
 
 export const VAULT_NAME = "Davel's Vault";
