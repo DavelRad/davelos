@@ -44,10 +44,13 @@ uvicorn main:app --port 8080 --reload
 With both running, the terminal streams real answers; without the backend (or
 without a key) it falls back to built-in canned answers, so dev never breaks.
 
-**Deployment is on GCP** — Firebase Hosting (frontend) + Cloud Run (backend).
-See **[DEPLOY.md](./DEPLOY.md)** for the full runbook. (`vercel.json` /
-`api/spotify.ts` remain as an alternative all-Vercel path but are superseded by
-the FastAPI service in `server/`.)
+**Deployment is on GCP** — a **single Cloud Run service** (`davelos`) whose
+multi-stage `Dockerfile` builds the SPA, then serves the static site *and*
+`/api/*` from one FastAPI process (one origin, no CORS). Live at
+<https://davelos-630783796094.us-central1.run.app> (davelradindra.com pending
+DNS). See **[DEPLOY.md](./DEPLOY.md)** for the runbook.
+(`vercel.json` / `api/spotify.ts` remain as an alternative all-Vercel path,
+superseded by `server/`.)
 
 ## Architecture
 
