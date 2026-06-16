@@ -55,18 +55,13 @@ function YCIcon() {
             "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.05) 24%, transparent 52%)",
         }}
       />
-      <span
-        style={{
-          position: "relative",
-          color: "#fff",
-          fontWeight: 700,
-          fontSize: "60%",
-          lineHeight: 1,
-          fontFamily: 'Georgia, "Times New Roman", "Times", serif',
-        }}
-      >
-        Y
-      </span>
+      {/* authentic YC mark: a thick white Y filling the tile */}
+      <svg viewBox="0 0 100 100" className="relative size-full" aria-hidden="true">
+        <g stroke="#fff" strokeWidth={10.5} fill="none" strokeLinecap="butt">
+          <path d="M30 26 L50 50 L70 26" />
+          <path d="M50 49 L50 76" />
+        </g>
+      </svg>
     </div>
   );
 }

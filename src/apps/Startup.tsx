@@ -1,31 +1,69 @@
 import {
   ExternalLink,
-  TrendingUp,
   AlertTriangle,
   Rocket,
   Check,
   Building2,
   ClipboardList,
   Quote,
+  Compass,
+  Layers,
+  TrendingDown,
+  Crosshair,
+  Users,
   type LucideIcon,
 } from "lucide-react";
-import { PhotoSlot } from "../components/PhotoSlot";
+import { Gallery } from "../components/Gallery";
+import { photosFor } from "../data/photos";
 
 /* ------------------------------------------------------------------ *
- * Startup app — Davel's startup journey. Three sections:
- *   1. Nogic (the company)         2. Founders Inc (community/studio)
- *   3. YC · Paxel report (his genuine YC-tool artifact)
- * The Paxel content is verbatim from the real Y Combinator tool report.
- *
+ * Startup app — Davel's FOUNDER JOURNEY. Sections:
+ *   1. The build — Nogic (product-forward: metrics + pipeline diagram, no photos)
+ *   2. Founders Inc (the studio + real photos from his time there)
+ *   3. How I operate — founder skills (grounded in real wins + the Paxel data)
+ *   4. Y Combinator · the data (his genuine Paxel-tool report)
  * Visual language matches the Obsidian app: tinted, accent-bordered callouts.
  * ------------------------------------------------------------------ */
 
+const FOUNDER_SKILLS: { icon: LucideIcon; title: string; body: string }[] = [
+  {
+    icon: Rocket,
+    title: "Ship to real users, fast",
+    body: "Nogic hit 35,000+ installs and htmlnote shipped as an OSS Claude Code plugin — I get things into people's hands instead of polishing prototypes.",
+  },
+  {
+    icon: Layers,
+    title: "Go a layer deeper than the API",
+    body: "I built the retrieval (BM25 + rerank), the agent loop, and the verification layer most teams skip. Depth on the hard infra is the moat.",
+  },
+  {
+    icon: TrendingDown,
+    title: "Founder-grade cost discipline",
+    body: "~90% input-token cost cut at Nogic; 80% infra + 50% LLM cost cut at Jonajo. I treat unit economics as a feature, not an afterthought.",
+  },
+  {
+    icon: Crosshair,
+    title: "Correct the frame before building",
+    body: "I interrogate the product framing and work backwards from the user — the Paxel analysis flagged this as my strongest instinct.",
+  },
+  {
+    icon: Check,
+    title: "High bar near release",
+    body: "I reject incoherent output instead of patching around it, and I'll delete a broken foundation and reset rather than ship it.",
+  },
+  {
+    icon: Users,
+    title: "Orchestrate, don't dictate",
+    body: "I run multiple agents in parallel and build in dialogue — 95 hours across 18 sessions on Nogic, back-and-forth, not one-shot.",
+  },
+];
+
 const STATS: { label: string; value: string; sub?: string }[] = [
-  { label: "The Architect", value: "67%", sub: "sessions include architecture discussions" },
-  { label: "Working style", value: "Back-and-forth", sub: "works in dialogue, not dictation" },
-  { label: "Longest session", value: "16h 0m" },
-  { label: "Parallelism", value: "3 agents", sub: "at once" },
+  { label: "Archetype", value: "The Architect", sub: "67% of sessions discuss architecture" },
+  { label: "Working style", value: "Back-and-forth", sub: "builds in dialogue, not dictation" },
   { label: "Total", value: "95 hours", sub: "across 18 sessions" },
+  { label: "Parallelism", value: "3 agents", sub: "at once" },
+  { label: "Longest session", value: "16h 0m" },
   { label: "Prompts / session", value: "67" },
   { label: "Avg prompt length", value: "244 words" },
   { label: "Product Thinker", value: "67%", sub: "reference product decisions" },
@@ -37,20 +75,36 @@ const DECISIONS = [
   { label: "Workflow from User Backwards", count: 6 },
 ];
 
-const STRENGTHS = [
-  "Product-frame correction instinct — interrogates the framing before building.",
-  "High quality bar near public release — rejects incoherent output instead of polishing around it.",
-  "Knows when to delete a broken foundation and reset, rather than patching.",
-];
-
 const GROWTH = [
   "Planning consistency across sessions.",
   "Tighter specs on generation tasks.",
-  "Add explicit acceptance checks after redirects.",
+  "Explicit acceptance checks after redirects.",
 ];
 
-/* ---- callout (same look as the Obsidian reading view) ---- */
+/* ---- the Y Combinator mark (authentic logo: thick white Y on orange) ---- */
+function YCMark({ size = 32 }: { size?: number }) {
+  return (
+    <div
+      className="relative grid shrink-0 place-items-center overflow-hidden"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.22,
+        background: "#fb651e",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35), 0 2px 6px -2px rgba(0,0,0,0.5)",
+      }}
+    >
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <g stroke="#fff" strokeWidth={10.5} fill="none" strokeLinecap="butt">
+          <path d="M30 26 L50 50 L70 26" />
+          <path d="M50 49 L50 76" />
+        </g>
+      </svg>
+    </div>
+  );
+}
 
+/* ---- callout (same look as the Obsidian reading view) ---- */
 type CalloutColor = "green" | "blue" | "teal" | "purple" | "orange" | "gray";
 
 const CO: Record<CalloutColor, string> = {
@@ -91,9 +145,7 @@ function Callout({
         {title}
       </div>
       {children ? (
-        <div className="mt-1.5 text-sm leading-relaxed text-[#d4d4da]">
-          {children}
-        </div>
+        <div className="mt-1.5 text-sm leading-relaxed text-[#d4d4da]">{children}</div>
       ) : null}
     </div>
   );
@@ -109,7 +161,7 @@ function Tag({ children }: { children: React.ReactNode }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 mt-7 flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[#8a8a93] first:mt-0">
+    <p className="mb-3 mt-8 flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[#8a8a93] first:mt-0">
       {children}
     </p>
   );
@@ -120,41 +172,30 @@ export function Startup() {
     <div className="flex h-full flex-col bg-[#0f0f11] text-[#e7e7ea]">
       {/* header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-white/8 bg-[#141417] px-5 py-3">
-        <div className="grid size-8 place-items-center rounded-lg bg-[#fb651e] text-sm font-bold text-white">
-          <Rocket className="size-4" />
-        </div>
+        <YCMark size={34} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">Davel — Startup Journey</p>
-          <p className="truncate text-xs text-[#9a9aa2]">
-            Nogic · Founders Inc · Y Combinator
-          </p>
+          <p className="truncate text-sm font-semibold">Davel — Founder's Journey</p>
+          <p className="truncate text-xs text-[#9a9aa2]">Nogic · Founders Inc · Y Combinator</p>
         </div>
       </div>
 
       <div className="scroll-region min-h-0 flex-1 overflow-y-auto px-5 py-5">
-        {/* 1. NOGIC */}
+        {/* 1. THE BUILD — NOGIC (product) */}
         <SectionLabel>
-          <Rocket className="size-3.5 text-[#fb651e]" /> Startup — Nogic
+          <Rocket className="size-3.5 text-[#fb651e]" /> The build — Nogic
         </SectionLabel>
 
-        <Callout color="teal" icon={ClipboardList} title="What it is">
-          <span className="font-semibold text-white">Nogic</span> is the dev-tools
-          startup I co-founded — AI that reads your codebase and explains changes.
-          A VS Code extension and a GitHub App that generate codebase and PR
+        <Callout color="teal" icon={ClipboardList} title="What I'm building">
+          <span className="font-semibold text-white">Nogic</span> — the dev-tools
+          startup I co-founded. AI that reads your codebase and explains changes: a
+          VS Code extension and a GitHub App that generate codebase and PR
           walkthroughs.
         </Callout>
 
-        <div className="mb-3 flex flex-wrap gap-2">
-          <Tag>#dev-tools</Tag>
-          <Tag>#claude</Tag>
-          <Tag>#fastapi</Tag>
-          <Tag>#founders-inc</Tag>
-        </div>
-
         <div className="grid gap-2.5 sm:grid-cols-2">
           <Callout color="green" icon={Check} title="35,000+ installs">
-            VS Code extension shipped, plus a GitHub App generating codebase and
-            PR walkthroughs.
+            VS Code extension shipped, plus a GitHub App generating codebase and PR
+            walkthroughs.
           </Callout>
           <Callout color="green" icon={Check} title="~90% input-token cost cut">
             FastAPI / Cloud Run backend — 13 REST + SSE endpoints — with Claude
@@ -162,48 +203,62 @@ export function Startup() {
           </Callout>
         </div>
 
-        <div className="mt-3">
-          <PhotoSlot name="nogic-team" caption="Nogic — building day" />
+        {/* the product, as an architecture diagram */}
+        <img
+          src="/diagrams/nogic-pipeline.svg"
+          alt="Nogic pipeline: codebase → retrieval → agent loop → verification → walkthrough"
+          className="mt-3 w-full rounded-xl"
+          loading="lazy"
+        />
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Tag>#dev-tools</Tag>
+          <Tag>#claude</Tag>
+          <Tag>#fastapi</Tag>
+          <Tag>#cloud-run</Tag>
         </div>
 
-        {/* 2. FOUNDERS INC */}
-        <SectionLabel>Founders Inc</SectionLabel>
+        {/* 2. FOUNDERS INC + photos */}
+        <SectionLabel>
+          <Building2 className="size-3.5 text-[#549cff]" /> Founders Inc
+        </SectionLabel>
 
         <Callout color="blue" icon={Building2} title="Founders Inc alum">
-          Nogic went through <span className="font-semibold text-white">Founders
-          Inc</span> (f.inc) — an SF startup community and studio at{" "}
-          <span className="text-white">Fort Mason</span>, Marina. Founded{" "}
-          <span className="text-white">2020 by Furqan Rydhan</span>, backing
-          emerging-tech founders across AI, hardware, robotics, AR/VR, and
-          consumer.
+          Nogic went through <span className="font-semibold text-white">Founders Inc</span>{" "}
+          (f.inc) — the SF startup studio + community at{" "}
+          <span className="text-white">Fort Mason</span>, Marina. A ~4–7% equity,
+          indefinite-support model on a 42,000-sqft campus — hardware lab, media
+          studio, gym, and a community of emerging-tech founders.
         </Callout>
 
+        <Gallery photos={photosFor("founders-inc")} />
+
+        {/* 3. FOUNDER SKILLS */}
+        <SectionLabel>
+          <Compass className="size-3.5 text-[#a78bfa]" /> How I operate — founder skills
+        </SectionLabel>
+
         <div className="grid gap-2.5 sm:grid-cols-2">
-          <div className="rounded-lg border border-white/8 bg-[#141417] p-3 text-xs text-[#c4c4cc]">
-            <ul className="space-y-1.5">
-              <li>• ~4–7% equity, indefinite-support model (not a fixed batch)</li>
-              <li>• 42,000-sqft campus at Fort Mason</li>
-              <li>• Hardware lab · media studio · gym · event spaces</li>
-              <li>• Community of emerging-tech founders</li>
-            </ul>
-          </div>
-          <div className="grid gap-2.5">
-            <PhotoSlot name="founders-inc-campus" caption="Founders Inc — Fort Mason" />
-          </div>
-        </div>
-        <div className="mt-2.5">
-          <PhotoSlot name="founders-inc-demo" caption="Demo day" />
+          {FOUNDER_SKILLS.map(({ icon: Icon, title, body }) => (
+            <div key={title} className="rounded-lg border border-white/8 bg-[#141417] p-3">
+              <p className="flex items-center gap-2 text-sm font-semibold text-white">
+                <Icon className="size-4 shrink-0 text-[#a78bfa]" />
+                {title}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[#b4b4bc]">{body}</p>
+            </div>
+          ))}
         </div>
 
-        {/* 3. YC · PAXEL */}
-        <SectionLabel>Y Combinator · Paxel report</SectionLabel>
+        {/* 4. YC · PAXEL — the data behind the skills */}
+        <SectionLabel>Y Combinator · the data</SectionLabel>
         <div className="flex items-center gap-3 rounded-t-xl border border-b-0 border-white/8 bg-[#141417] px-4 py-3">
-          <div className="grid size-8 place-items-center rounded-lg bg-[#fb651e] font-serif text-base font-bold text-white">
-            Y
-          </div>
+          <YCMark size={32} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">Report #2 — nogic</p>
-            <p className="truncate text-xs text-[#9a9aa2]">18 sessions · Jun 6, 2026</p>
+            <p className="truncate text-sm font-semibold">Paxel report #2 — nogic</p>
+            <p className="truncate text-xs text-[#9a9aa2]">
+              a YC tool analyzed how I actually build · 18 sessions
+            </p>
           </div>
           <a
             href="https://paxel.ycombinator.com/results/zcdbf2hp"
@@ -216,50 +271,23 @@ export function Startup() {
         </div>
 
         <div className="rounded-b-xl border border-white/8 bg-[#0f0f11] p-4">
-          {/* headline narrative as a quote callout */}
-          <Callout
-            color="purple"
-            icon={Quote}
-            title="How Davel codes with Claude Code"
-          >
+          <Callout color="purple" icon={Quote} title="The headline">
             “Strong engineering judgment when the work has stakes: interrogates the
             product frame, forces Claude Code back to real files and real
             screenshots, and rejects incoherent output instead of polishing around
             it.”
           </Callout>
 
-          {/* stat grid */}
           <div className="mt-1 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             {STATS.map((s) => (
               <div key={s.label} className="rounded-lg border border-white/8 bg-[#16161a] p-3">
                 <p className="text-[0.6rem] uppercase tracking-wide text-[#8a8a93]">{s.label}</p>
-                <p className="mt-1 text-lg font-semibold leading-tight text-white">{s.value}</p>
+                <p className="mt-1 text-base font-semibold leading-tight text-white">{s.value}</p>
                 {s.sub ? <p className="mt-0.5 text-[0.65rem] leading-snug text-[#9a9aa2]">{s.sub}</p> : null}
               </div>
             ))}
           </div>
 
-          {/* AI style + quirky prompts */}
-          <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-            <div className="rounded-lg border border-white/8 bg-[#16161a] p-3">
-              <p className="text-[0.6rem] uppercase tracking-wide text-[#8a8a93]">AI style</p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-xs text-[#e7e7ea]">Dances with Robots</span>
-                <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-xs text-[#e7e7ea]">Cognitive Breadth</span>
-              </div>
-            </div>
-            <div className="rounded-lg border border-white/8 bg-[#16161a] p-3 font-mono text-xs">
-              <p className="text-[#9a9aa2]">
-                go-to prompt <span className="text-[#e7e7ea]">“d2 creates svg?”</span>{" "}
-                <span className="text-[#6a6a72]">×3</span>
-              </p>
-              <p className="mt-1.5 text-[#9a9aa2]">
-                most cryptic <span className="text-[#e7e7ea]">“this shit just blank”</span>
-              </p>
-            </div>
-          </div>
-
-          {/* decision patterns */}
           <p className="mb-2 mt-5 text-sm font-semibold text-white">Decision patterns</p>
           <div className="space-y-1.5">
             {DECISIONS.map((d) => {
@@ -276,24 +304,9 @@ export function Startup() {
             })}
           </div>
 
-          {/* strengths as a green callout */}
-          <div className="mt-5">
-            <Callout color="green" icon={TrendingUp} title="Strengths">
-              <ul className="space-y-1.5">
-                {STRENGTHS.map((s) => (
-                  <li key={s} className="flex gap-2 leading-relaxed">
-                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#5ed39a]" />
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </Callout>
-          </div>
-
-          {/* growth (compact, orange) */}
-          <div className="rounded-lg border border-[#e69f4644] bg-[#e69f4614] px-4 py-3">
+          <div className="mt-5 rounded-lg border border-[#e69f4644] bg-[#e69f4614] px-4 py-3">
             <p className="flex items-center gap-2 text-xs font-semibold text-[#e69f46]">
-              <AlertTriangle className="size-3.5" /> Growth areas
+              <AlertTriangle className="size-3.5" /> Where I'm still leveling up
             </p>
             <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#c9b89a]">
               {GROWTH.map((g) => (
@@ -303,13 +316,6 @@ export function Startup() {
                 </li>
               ))}
             </ul>
-          </div>
-
-          {/* more YC experience placeholder */}
-          <div className="mt-3 rounded-lg border border-dashed border-white/12 bg-white/[0.02] px-4 py-3 text-xs text-[#9a9aa2]">
-            <span className="font-medium text-[#c4c4cc]">More YC experience</span> —
-            placeholder for additional Y Combinator involvement Davel will add
-            later.
           </div>
 
           <p className="mt-4 text-center text-[0.6rem] text-[#6a6a72]">

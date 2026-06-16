@@ -23,6 +23,8 @@ import typescript from "highlight.js/lib/languages/typescript";
 import bash from "highlight.js/lib/languages/bash";
 import json from "highlight.js/lib/languages/json";
 import python from "highlight.js/lib/languages/python";
+import { Gallery } from "../components/Gallery";
+import { photosFor } from "../data/photos";
 
 const HL_LANGUAGES = {
   typescript,
@@ -260,6 +262,9 @@ export function Markdown({
     },
     img({ src, alt }) {
       const url = typeof src === "string" ? src : "";
+      if (url.startsWith("gallery:")) {
+        return <Gallery photos={photosFor(url.slice("gallery:".length))} />;
+      }
       const yt = youtubeId(url);
       if (yt) return <YouTubeEmbed id={yt} />;
       if (isObsidian) {
@@ -341,7 +346,9 @@ export function Markdown({
         // Preserve our internal wikilink: scheme (react-markdown's default
         // urlTransform would otherwise strip the unknown scheme to "").
         urlTransform={(url) =>
-          url.startsWith(WIKI_SCHEME) ? url : defaultUrlTransform(url)
+          url.startsWith(WIKI_SCHEME) || url.startsWith("gallery:")
+            ? url
+            : defaultUrlTransform(url)
         }
         components={components}
       >

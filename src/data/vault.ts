@@ -56,7 +56,7 @@ with [[About]], see what I'm shipping in [[Now]], or jump to [[Nogic]].
 > [[LandDrop]] · [[Databae]] · [[htmlnote]] · [[Particle]] · [[HoloChat]] · [[More Projects]]
 
 > [!tip] Reference
-> 🧰 [[Stack]] — languages, frameworks, infra · 📬 [[Contact]]
+> 🧰 [[Stack]] — languages, frameworks, infra · 📬 [[Contact]] · 🌄 [[Life]]
 
 #ai-dev-tools #agentic-systems #san-francisco`;
 
@@ -184,6 +184,10 @@ the **uAgents** framework.
 > Python · uAgents · LangChain · LangGraph · CrewAI · Qdrant · Supabase ·
 > MongoDB · Next.js
 
+## Moments
+
+![gallery](gallery:fetchai)
+
 The patterns here carried straight into [[Nogic]]. Around then: [[Headstarter]].
 Before: [[Jonajo]].`;
 
@@ -216,6 +220,10 @@ const JONAJO = `# Jonajo
 
 > [!quote] Stack
 > TypeScript · Firebase · MongoDB · CI/CD · TensorDock
+
+## Moments
+
+![gallery](gallery:jonajo)
 
 Next: [[Fetch.ai]] → [[Nogic]].`;
 
@@ -341,6 +349,10 @@ const LANDDROP = `# LandDrop
 > [!info] Stack
 > Next.js · FastAPI · uAgents · GPT-4 (Azure) · Mapbox
 
+## Moments
+
+![gallery](gallery:hack-for-social-impact)
+
 Same agentic toolkit as [[Databae]] and my work at [[Fetch.ai]].`;
 
 const DATABAE = `# Databae
@@ -370,6 +382,10 @@ A **4-agent pipeline** on the **uAgents** framework — each agent hands off to 
 > [!info] Stack
 > Next.js · Shadcn · Framer Motion · FastAPI · Python · Groq LLaMA · uAgents · Pandas
 
+## Moments
+
+![gallery](gallery:calhacks)
+
 Sibling project to [[LandDrop]]. Built on the [[Stack]].`;
 
 const CONTACT = `# Contact
@@ -386,6 +402,15 @@ const CONTACT = `# Contact
 > [!quote]
 > Currently open to **select work**. If you're building something hard in AI
 > dev tools or agentic systems, let's talk.
+
+Back to [[About]] · [[Home]].`;
+
+const LIFE = `# Life
+
+> [!quote] Outside the terminal
+> Hiking, chess, live music, a lot of café work — and far too much time on X.
+
+![gallery](gallery:life)
 
 Back to [[About]] · [[Home]].`;
 
@@ -505,6 +530,7 @@ export const vaultNotes: VaultNote[] = [
   { title: "More Projects", folder: "Projects", body: MORE_PROJECTS, tags: ["misc"] },
   { title: "Stack", folder: "", body: STACK, tags: ["reference", "toolkit"] },
   { title: "Contact", folder: "", body: CONTACT, tags: ["contact"] },
+  { title: "Life", folder: "", body: LIFE, tags: ["life", "gallery"] },
 ];
 
 /** Folder tree for the file explorer (order matters). */
@@ -516,7 +542,7 @@ export const vaultTree: VaultFolder[] = [
     notes: ["LandDrop", "Databae", "htmlnote", "Particle", "HoloChat", "More Projects"],
   },
   // top-level notes (folder === "")
-  { name: "", notes: ["Home", "Stack", "Contact"] },
+  { name: "", notes: ["Home", "Stack", "Contact", "Life"] },
 ];
 
 export const VAULT_NAME = "Davel's Vault";
