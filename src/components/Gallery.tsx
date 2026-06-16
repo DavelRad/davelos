@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { captionFor } from "../data/captions";
 
 /**
- * A responsive photo gallery with a full-screen lightbox (click a thumbnail,
- * arrow-keys / on-screen arrows to move, Esc / backdrop to close).
+ * A responsive photo gallery with a full-screen lightbox + per-photo captions.
  *
- * All container elements are <span>s (with CSS display) + <button>/<img> so the
- * gallery is valid *inline* content — it can be dropped inside an Obsidian note
- * paragraph (`![gallery](gallery:<bucket>)`) as well as used directly in the
- * Startup app. Styling lives in index.css (.ph-*).
+ * The lightbox is rendered through a PORTAL to document.body: davelOS windows
+ * are positioned with CSS `transform`, which would otherwise trap a
+ * `position: fixed` overlay inside the window (making the image overflow / look
+ * zoomed-in). Portaling escapes that transform so the lightbox truly fills the
+ * viewport and the image fits with `object-fit: contain`.
+ *
+ * Thumbnails are inline (<span>/<button>/<img>) so a gallery is valid inside a
+ * note paragraph (`![gallery](gallery:<bucket>)`). Styling lives in index.css.
  */
 export function Gallery({ photos }: { photos: string[] }) {
   const [open, setOpen] = useState<number | null>(null);
@@ -31,69 +36,83 @@ export function Gallery({ photos }: { photos: string[] }) {
 
   if (!photos.length) return null;
 
+  const caption = open !== null ? captionFor(photos[open]) : undefined;
+
   return (
     <span className="ph-gallery">
       <span className="ph-grid">
-        {photos.map((src, i) => (
-          <button
-            key={src}
-            type="button"
-            className="ph-thumb"
-            onClick={() => setOpen(i)}
-            aria-label={`Open photo ${i + 1} of ${photos.length}`}
-          >
-            <img src={src} alt="" loading="lazy" />
-          </button>
-        ))}
+        {photos.map((src, i) => {
+          const cap = captionFor(src);
+          return (
+            <button
+              key={src}
+              type="button"
+              className="ph-thumb"
+              onClick={() => setOpen(i)}
+              aria-label={cap ?? `Open photo ${i + 1} of ${photos.length}`}
+            >
+              <img src={src} alt={cap ?? ""} loading="lazy" />
+              {cap ? <span className="ph-cap">{cap}</span> : null}
+            </button>
+          );
+        })}
       </span>
 
-      {open !== null ? (
-        <span className="ph-lightbox" onClick={close} role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="ph-lb-btn ph-lb-close"
-            onClick={close}
-            aria-label="Close"
-          >
-            ✕
-          </button>
-          {photos.length > 1 ? (
-            <button
-              type="button"
-              className="ph-lb-btn ph-lb-prev"
-              onClick={(e) => {
-                e.stopPropagation();
-                step(-1);
-              }}
-              aria-label="Previous photo"
+      {open !== null
+        ? createPortal(
+            <div
+              className="ph-lightbox"
+              onClick={close}
+              role="dialog"
+              aria-modal="true"
             >
-              ‹
-            </button>
-          ) : null}
-          <img
-            className="ph-lb-img"
-            src={photos[open]}
-            alt=""
-            onClick={(e) => e.stopPropagation()}
-          />
-          {photos.length > 1 ? (
-            <button
-              type="button"
-              className="ph-lb-btn ph-lb-next"
-              onClick={(e) => {
-                e.stopPropagation();
-                step(1);
-              }}
-              aria-label="Next photo"
-            >
-              ›
-            </button>
-          ) : null}
-          <span className="ph-lb-count">
-            {open + 1} / {photos.length}
-          </span>
-        </span>
-      ) : null}
+              <button
+                type="button"
+                className="ph-lb-btn ph-lb-close"
+                onClick={close}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+              {photos.length > 1 ? (
+                <button
+                  type="button"
+                  className="ph-lb-btn ph-lb-prev"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    step(-1);
+                  }}
+                  aria-label="Previous photo"
+                >
+                  ‹
+                </button>
+              ) : null}
+
+              <figure className="ph-lb-fig" onClick={(e) => e.stopPropagation()}>
+                <img className="ph-lb-img" src={photos[open]} alt={caption ?? ""} />
+                {caption ? <figcaption className="ph-lb-cap">{caption}</figcaption> : null}
+              </figure>
+
+              {photos.length > 1 ? (
+                <button
+                  type="button"
+                  className="ph-lb-btn ph-lb-next"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    step(1);
+                  }}
+                  aria-label="Next photo"
+                >
+                  ›
+                </button>
+              ) : null}
+              <span className="ph-lb-count">
+                {open + 1} / {photos.length}
+              </span>
+            </div>,
+            document.body,
+          )
+        : null}
     </span>
   );
 }

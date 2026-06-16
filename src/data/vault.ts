@@ -2,10 +2,11 @@
  * The Obsidian VAULT content layer for davelOS.
  *
  * Davel's portfolio is presented as an Obsidian vault — a set of interlinked
- * markdown notes — rather than a GitHub repo (no fabricated contribution
- * graph). Notes use Obsidian-style `[[wikilinks]]`; the Obsidian app resolves
- * them by note title. A small knowledge graph is derived from the wikilinks for
- * the Graph View.
+ * markdown notes. Notes use Obsidian-style `[[wikilinks]]`; the Obsidian app
+ * resolves them by note title. A small knowledge graph is derived from the
+ * wikilinks for the Graph View. Notes are written prose-forward (real writing,
+ * not stacks of callout boxes), with the occasional pull-quote, photo gallery
+ * (`![gallery](gallery:<event>)`), diagram, video, or screenshot.
  */
 
 /** A single frontmatter-style property shown in the PROPERTIES panel. */
@@ -38,25 +39,21 @@ export interface VaultFolder {
 
 const HOME = `# Davel Radindra
 
-> [!quote] Software Engineer & Co-founder
-> Building **AI developer tools** in San Francisco. Open to select work.
+**Software Engineer & Co-founder** — building **AI developer tools** in San
+Francisco. Open to select work.
 
 Welcome to my vault. This is how I think about my work, written as notes — start
 with [[About]], see what I'm shipping in [[Now]], or jump to [[Nogic]].
 
 ## Map of content
 
-> [!abstract] Davel
-> 🧑‍💻 [[About]] — who I am, how I work · 🚀 [[Now]] — what I'm building
+**Davel** — [[About]] (who I am, how I work) · [[Now]] (what I'm building)
 
-> [!note] Work
-> [[Nogic]] · [[Fetch.ai]] · [[Jonajo]] · [[Headstarter]]
+**Work** — [[Nogic]] · [[Fetch.ai]] · [[Jonajo]] · [[Headstarter]]
 
-> [!example] Projects
-> [[LandDrop]] · [[Databae]] · [[htmlnote]] · [[Particle]] · [[HoloChat]] · [[More Projects]]
+**Projects** — [[LandDrop]] · [[Databae]] · [[htmlnote]] · [[Particle]] · [[HoloChat]] · [[More Projects]]
 
-> [!tip] Reference
-> 🧰 [[Stack]] — languages, frameworks, infra · 📬 [[Contact]]
+**Reference** — [[Stack]] · [[Contact]]
 
 #ai-dev-tools #agentic-systems #san-francisco`;
 
@@ -67,122 +64,97 @@ systems. Most of my time goes to [[Nogic]], where we make AI that genuinely
 understands a codebase — retrieval, model routing, and the verification layers
 that keep it honest in production.
 
-> [!quote] My bias
 > I care about the parts that don't demo well: latency, cost, reliability, and
 > the failure modes that separate a prototype from a product. I like owning a
 > system end to end — from the prompt down to the Cloud Tasks queue.
 
 ## Background
 
-> [!info] Education
-> **B.S. Computer Science** — San José State University (Dec 2025) · GPA **3.9**
-> Software & Computer Engineering Society (Developer) · San Francisco, CA
-
-Deep in **AI + startups**: multi-agent systems, RAG, and LLM infrastructure.
+**B.S. Computer Science**, San José State University (Dec 2025), GPA **3.9** —
+Software & Computer Engineering Society, based in San Francisco. Deep in AI +
+startups: multi-agent systems, RAG, and LLM infrastructure.
 
 ## How I work
 
-> [!success] Principles
-> - Ship first, then harden. Production teaches you more than a doc.
-> - Optimize for the metric that matters — token cost, p95 latency, reliability.
-> - Go a layer deeper than the API call: retrieval, routing, verification.
+- **Ship first, then harden.** Production teaches you more than a doc.
+- **Optimize for the metric that matters** — token cost, p95 latency, reliability.
+- **Go a layer deeper than the API call** — retrieval, routing, verification.
 
-See my full toolkit in [[Stack]], or how to reach me in [[Contact]].
-
-> [!hint] Beyond code
-> Hiking, chess, live music, and far too much time on X.
+Off the clock: hiking, chess, live music, and far too much time on X. Full
+toolkit in [[Stack]]; how to reach me in [[Contact]].
 
 #engineer #founder #ai`;
 
 const NOW = `# Now
 
-Heads-down on [[Nogic]] — a VS Code extension (**35,000+ installs**) and a
-GitHub App that read your codebase and explain changes.
+Heads-down on [[Nogic]] — a VS Code extension (**35,000+ installs**) and a GitHub
+App that read your codebase and explain changes.
 
-> [!todo] Current focus
-> - Improving code-retrieval quality (**BM25 + LLM rerank**).
-> - Tightening the agent loop's tool use + the hallucination-checking pass.
-> - Hardening **nogic-ci** — idempotent workers on a Cloud Tasks queue.
-> - Shipping **[[htmlnote]]** — an OSS Claude Code plugin for reviewing
->   AI-generated HTML.
+Right now I'm:
 
-> [!quote]
-> The throughline: making AI reliable enough to trust on real codebases.
+- improving code-retrieval quality (**BM25 + LLM rerank**),
+- tightening the agent loop's tool use and the hallucination-checking pass,
+- hardening **nogic-ci** (idempotent workers on a Cloud Tasks queue), and
+- shipping **[[htmlnote]]**, an OSS Claude Code plugin for reviewing AI-generated HTML.
 
-Built with the [[Stack]] · ran through [[Nogic]].
+> The throughline: making AI reliable enough to trust on a real codebase.
+
+Built with the [[Stack]].
 
 #now #shipping`;
 
 const NOGIC = `# Nogic
 
-> [!abstract] What it is
-> A dev-tools startup I co-founded — AI that **reads codebases and explains
-> changes**. A VS Code extension + a GitHub App that generate codebase and PR
-> walkthroughs.
+The dev-tools startup I co-founded — AI that **reads codebases and explains
+changes**. A VS Code extension and a GitHub App that generate codebase and PR
+walkthroughs, shipped to **35,000+ installs**.
 
-> [!success] 35,000+ installs
-> VS Code extension shipped — plus a GitHub App generating codebase and PR
-> walkthroughs.
+The backend is a **FastAPI / Cloud Run** service (13 REST + SSE endpoints) with
+**Claude model routing** — Opus / Sonnet / Haiku by task — and **prompt caching**
+that cuts input-token cost by **~90%**.
 
-> [!check] ~90% input-token cost cut
-> A **FastAPI / Cloud Run** backend — **13 REST + SSE endpoints** — with
-> **Claude model routing** (Opus / Sonnet / Haiku by task) and **prompt
-> caching** on repeated input.
-
-## How it works
+## How a change gets read
 
 ![How a code change gets read and explained](/diagrams/nogic-pipeline.svg)
 
-> [!info] Retrieval + agent loop
-> A custom **BM25 + LLM-rerank** code-retrieval system feeds a **6-tool agent
-> loop**, with a **hallucination-checking verification pass** against sandboxed
-> repo checkouts.
+A custom **BM25 + LLM-rerank** retrieval system feeds a **6-tool agent loop**,
+then a **hallucination-checking pass** verifies every claim against sandboxed
+repo checkouts before it reaches you. The CI side — **nogic-ci** — is a
+TypeScript / Probot GitHub App on a Cloud Tasks queue: idempotent workers,
+retries, dedup, 18 test suites.
 
-> [!todo] nogic-ci
-> A **TypeScript / Probot** GitHub App on a **Cloud Tasks** queue — idempotent
-> workers, retries, dedup, **18 test suites**.
+> The throughline: making AI reliable enough to trust on a real codebase.
 
-> [!quote] Stack
-> Python · FastAPI · TypeScript · GCP / Cloud Run · Claude · Docker · Probot —
-> see [[Stack]].
+**Stack** — Python · FastAPI · TypeScript · GCP / Cloud Run · Claude · Docker · Probot. More in [[Stack]].
 
 Related: [[Now]] · [[htmlnote]] · [[Fetch.ai]] · [[About]]`;
 
 const FETCHAI = `# Fetch.ai
 
-One internship, **two phases** — both deep in **multi-agent systems** built on
-the **uAgents** framework.
+One internship, **two phases** — both deep in **multi-agent systems** on the
+**uAgents** framework.
 
-## Phase 2 · Moderna health platform
+## Phase 2 · Moderna health platform · May–Aug 2025
 
-> [!abstract] What it is
-> A multi-agent platform for **Moderna** analyzing **vaccine hesitancy** across
-> demographic, social-media, and voice data. \`May – Aug 2025\`
+A multi-agent platform for **Moderna**, analyzing **vaccine hesitancy** across
+demographic, social-media, and voice data.
 
 ![Moderna multi-agent platform — four agents orchestrated into a Next.js dashboard](/diagrams/fetchai-agents.svg)
 
-> [!success] 4-agent system
-> **Insights · Resources · Voice · Social** — orchestrated over **REST + chat
-> protocols**, with **Supabase** (19 datasets), **Qdrant** semantic search, and
-> **ASI1** query routing.
+Four agents — **Insights, Resources, Voice, Social** — orchestrated over REST +
+chat protocols, backed by **Supabase** (19 datasets), **Qdrant** semantic
+search, and **ASI1** query routing. I built the **Next.js 14 dashboard** (maps,
+charts, health boards), containerized it with Docker / Nginx, and contributed an
+**MCP adapter** to the open-source uAgents library.
 
-- Built a **Next.js 14 dashboard** with maps, charts, and health boards.
-- Containerized with **Docker / Nginx** — health checks, retries, logging.
-- Contributed an **MCP adapter** to the open-source **uAgents** library.
+## Phase 1 · AI e-commerce BI · Feb–May 2025
 
-## Phase 1 · AI e-commerce BI
+An AI business-intelligence tool on uAgents — agents for inventory queries,
+supplier tracking, dynamic pricing, and campaign planning, with multi-agent
+workflows in **LangChain, LangGraph, and CrewAI** and a MongoDB-backed agent that
+translated natural language into database operations.
 
-> [!abstract] What it is
-> An AI-powered **business-intelligence** tool on uAgents. \`Feb – May 2025\`
-
-- Agents for **inventory queries, supplier tracking, dynamic pricing, and
-  campaign planning**.
-- Multi-agent workflows with **LangChain, LangGraph, and CrewAI**.
-- A **MongoDB-backed** agent translating natural language into DB operations.
-
-> [!quote] Stack
-> Python · uAgents · LangChain · LangGraph · CrewAI · Qdrant · Supabase ·
-> MongoDB · Next.js
+**Stack** — Python · uAgents · LangChain · LangGraph · CrewAI · Qdrant · Supabase · MongoDB · Next.js.
 
 ## Moments
 
@@ -193,33 +165,26 @@ Before: [[Jonajo]].`;
 
 const HEADSTARTER = `# Headstarter
 
-> [!abstract] What it is
-> A selective engineering fellowship — build and ship fast, with mentorship from
-> engineers at **Meta** and other top companies.
+A selective engineering fellowship — build and ship fast, mentored by engineers
+from **Meta** and other top companies.
 
-> [!success] Built HoloChat to 1,000+ users
-> A multi-model AI support chatbot — see **[[HoloChat]]** — dynamically routing
-> between models for tailored **technical, general, and creative** responses.
+I built **[[HoloChat]]** to **1,000+ users**: a multi-model AI support chatbot
+that routes between models for tailored technical, general, and creative answers.
 
-> [!quote] Stack
-> Next.js · Pinecone · Hugging Face · OpenRouter
-
-See the project: [[HoloChat]] · the rest of my [[Stack]].`;
+**Stack** — Next.js · Pinecone · Hugging Face · OpenRouter. See the project:
+[[HoloChat]] · the rest of my [[Stack]].`;
 
 const JONAJO = `# Jonajo
 
-> [!abstract] What it is
-> A full-stack widget serving **25k+ users**, built for cost efficiency.
+Built and shipped a full-stack widget serving **25k+ users** on Firebase and
+MongoDB — then went to work on the bill. Migrated to **TensorDock** behind a
+hardened **CI/CD** pipeline that cut **infra cost 80%**, and trimmed **LLM
+compute 50%** with batching + caching changes.
 
-> [!check] 80% infra cost cut
-> Migrated to **TensorDock** with a hardened **CI/CD** pipeline, and reduced
-> **LLM compute cost 50%** via batching + caching changes.
+First real lesson in founder economics: the unglamorous wins — cost, reliability
+— are the ones that compound.
 
-- Built and shipped a full-stack widget serving **25k+ users** on Firebase and
-  MongoDB.
-
-> [!quote] Stack
-> TypeScript · Firebase · MongoDB · CI/CD · TensorDock
+**Stack** — TypeScript · Firebase · MongoDB · CI/CD · TensorDock.
 
 ## Moments
 
@@ -229,71 +194,55 @@ Next: [[Fetch.ai]] → [[Nogic]].`;
 
 const HTMLNOTE = `# htmlnote
 
-> [!abstract] What it is
-> **Visual review for AI-generated HTML.** When Claude writes or edits HTML,
-> htmlnote opens a review tab — click any element, leave a note, then copy the
-> notes back into chat. The tightest loop for fixing AI-built UIs.
+**Visual review for AI-generated HTML.** When Claude writes or edits HTML,
+htmlnote opens a review tab — click any element, leave a note, then copy the
+notes back into chat. The tightest loop for fixing AI-built UIs.
 
 ![htmlnote — visual review for AI-generated HTML (demo)](https://youtu.be/88mcHRczZlU)
 
-> [!success] Shipped OSS · a Claude Code plugin
-> Distributed via \`/plugin install htmlnote\` with precompiled **binaries for
-> macOS + Linux** and a one-line install script. Hooks into Claude Code so the
-> review tab opens **automatically** after an HTML edit.
+I shipped it as an **open-source Claude Code plugin** — \`/plugin install htmlnote\`,
+with precompiled binaries for macOS + Linux and a one-line install script. It
+hooks into Claude Code so the review tab opens **automatically** after an HTML
+edit.
 
-> [!info] Stack
-> TypeScript · Claude Code plugin · cross-platform binaries
-
-> [!example] Links
-> [Watch the demo →](https://youtu.be/88mcHRczZlU) ·
-> [github.com/DavelRad/htmlnote](https://github.com/DavelRad/htmlnote)
+**Stack** — TypeScript · Claude Code plugin · cross-platform binaries.
+[Watch the demo →](https://youtu.be/88mcHRczZlU) · [github.com/DavelRad/htmlnote](https://github.com/DavelRad/htmlnote)
 
 Same world as [[Nogic]] — tools that make AI reliable for real developers.`;
 
 const HOLOCHAT = `# HoloChat
 
-> [!abstract] What it is
-> A multi-model AI support chatbot that **picks the right model per query**,
-> each with a distinct personality. Built at [[Headstarter]].
+A multi-model AI support chatbot that **picks the right model per query**, each
+with its own personality. Built at [[Headstarter]] and grew to **1,000+ users**.
 
 ![HoloChat — multi-model AI support chatbot (demo)](https://youtu.be/t6njzBo5tko)
 
-> [!success] 1,000+ users
-> Three routed assistants:
-> - **Lani the Llama** (Llama-3.1-8B) — friendly general support.
-> - **Byte the Tech Owl** (RWKV) — deep technical + coding help.
-> - **Myra the Myth Weaver** (MythoMist) — creative + storytelling.
+Three routed assistants: **Lani the Llama** (Llama-3.1-8B) for friendly general
+support, **Byte the Tech Owl** (RWKV) for deep technical + coding help, and
+**Myra the Myth Weaver** (MythoMist) for creative + storytelling.
 
-> [!info] Stack
-> Next.js · Pinecone · Hugging Face · OpenRouter
-
-> [!example] Links
-> [Live demo →](https://holo-chat.vercel.app/) ·
-> [demo video](https://youtu.be/t6njzBo5tko)`;
+**Stack** — Next.js · Pinecone · Hugging Face · OpenRouter.
+[Live demo →](https://holo-chat.vercel.app/) · [demo video](https://youtu.be/t6njzBo5tko)`;
 
 const PARTICLE = `# Particle
 
-> [!abstract] What it is
-> A scalable pipeline that **scrapes, analyzes, and generates real-time
-> environmental news** — it also powered the live demo on my previous site.
+A scalable pipeline that **scrapes, analyzes, and generates real-time
+environmental news** — it also powered the live demo on my previous site.
 
-- **FastAPI** services with scheduled jobs on **Docker + Kubernetes** for
-  continuous content updates.
-- **React** front end over a **MongoDB** store; Bash tooling to automate deploys.
+**FastAPI** services run scheduled jobs on **Docker + Kubernetes** for continuous
+content updates, with a **React** front end over a **MongoDB** store and Bash
+tooling to automate deploys.
 
-> [!info] Stack
-> Python · FastAPI · Docker · Kubernetes · React · MongoDB
-
-Built on the [[Stack]].`;
+**Stack** — Python · FastAPI · Docker · Kubernetes · React · MongoDB. Built on the [[Stack]].`;
 
 const MORE_PROJECTS = `# More Projects
 
-> [!example] A few more things I've built
-> - **ScamShield / Scam-Detector** — Python tools for detecting scam content.
-> - **Media Player** — a cross-platform **JavaFX** player with \`.srt\` subtitle
->   parsing + sync, speed control, and fullscreen.
-> - **Expense Tracker** · **Inventory Tracker** — full-stack utilities.
-> - **Process Simulator** (CS149) — an OS process-scheduling simulation in **C++**.
+A few more things I've built:
+
+- **ScamShield / Scam-Detector** — Python tools for detecting scam content.
+- **Media Player** — a cross-platform **JavaFX** player with \`.srt\` subtitle parsing + sync, speed control, and fullscreen.
+- **Expense Tracker** · **Inventory Tracker** — full-stack utilities.
+- **Process Simulator** (CS149) — an OS process-scheduling simulation in **C++**.
 
 More at [github.com/DavelRad](https://github.com/DavelRad).
 
@@ -301,37 +250,27 @@ More at [github.com/DavelRad](https://github.com/DavelRad).
 
 const STACK = `# Stack
 
-> [!note] Languages
-> Python · TypeScript · JavaScript · Go · SQL · Java · C++ · Bash
+**Languages** — Python · TypeScript · JavaScript · Go · SQL · Java · C++ · Bash
 
-> [!tip] Frameworks
-> FastAPI · Next.js · React · LangChain · LangGraph · CrewAI · uAgents ·
-> NestJS · Express · Flask · Tauri
+**Frameworks** — FastAPI · Next.js · React · LangChain · LangGraph · CrewAI · uAgents · NestJS · Express · Flask · Tauri
 
-> [!abstract] AI / Data
-> Claude · Groq · Hugging Face · OpenRouter · Pinecone · Qdrant · Supabase ·
-> MongoDB · Redis · PostgreSQL
+**AI / Data** — Claude · Groq · Hugging Face · OpenRouter · Pinecone · Qdrant · Supabase · MongoDB · Redis · PostgreSQL
 
-### Infra / Tools
-
-| Category | Tools |
+| Infra | Tools |
 | --- | --- |
 | **Cloud** | GCP · AWS · Azure |
 | **Containers** | Docker · Kubernetes |
 | **IaC / Ops** | Terraform · CI/CD · Nginx |
 
-The toolkit behind [[Nogic]], [[htmlnote]], and projects like [[LandDrop]] and
-[[Databae]].`;
+The toolkit behind [[Nogic]], [[htmlnote]], and projects like [[LandDrop]] and [[Databae]].`;
 
 const LANDDROP = `# LandDrop
 
-> [!quote] From soil to society — visualize, analyze, understand
-> The UN reports **40% of Earth's land is already degraded**, heading toward 90%
-> by 2050. LandDrop analyzes soil + weather data for any location and surfaces
-> where environmental and economic risk overlap.
+**🏆 Hack for Social Impact 2024 — Global Good Prize (Fetch.ai track).**
 
-> [!success] 🏆 Hack for Social Impact 2024 — Global Good Prize (Fetch.ai track)
-> Earned a ⭐ on GitHub.
+The UN reports **40% of Earth's land is already degraded**, heading toward 90% by
+2050. LandDrop analyzes soil + weather data for any location and surfaces where
+environmental and economic risk overlap — from soil to society.
 
 ![Soil analysis for any location — density, temperature, moisture and drought risk, with a Fetch AI agent answering land-degradation questions](/projects/landdrop/01.png)
 
@@ -339,15 +278,12 @@ const LANDDROP = `# LandDrop
 
 ## How it works
 
-> [!info] Three agents on uAgents
-> - **Environmentalist** — retrieves the environmental + soil datasets.
-> - **Socioeconomist** — gathers the social and economic data.
-> - **Predictor** — forecasts degradation and drought trends.
->
-> It all flows into interactive maps, correlation graphs, and summaries.
+Three agents on **uAgents**: the **Environmentalist** retrieves environmental +
+soil datasets, the **Socioeconomist** gathers the social and economic data, and
+the **Predictor** forecasts degradation and drought trends. It all flows into
+interactive maps, correlation graphs, and summaries.
 
-> [!info] Stack
-> Next.js · FastAPI · uAgents · GPT-4 (Azure) · Mapbox
+**Stack** — Next.js · FastAPI · uAgents · GPT-4 (Azure) · Mapbox.
 
 ## Moments
 
@@ -357,11 +293,10 @@ Same agentic toolkit as [[Databae]] and my work at [[Fetch.ai]].`;
 
 const DATABAE = `# Databae
 
-> [!quote] Simplify databases for everyone
-> Not everyone wants to write SQL. **Databae** lets anyone ask a question in
-> plain English and get the right query, the result, and an analysis back.
+**🏆 CalHacks 11.0 — Fetch.ai Agentic Track winner.**
 
-> [!success] 🏆 CalHacks 11.0 — Fetch.ai Agentic Track winner
+Not everyone wants to write SQL. **Databae** lets anyone ask a question in plain
+English and get the right query, the result, and an analysis back.
 
 ![Ask in plain English — Databae writes and runs the SQL, then returns the result table](/projects/databae/02.png)
 
@@ -369,18 +304,14 @@ const DATABAE = `# Databae
 
 ## How it works
 
-A **4-agent pipeline** on the **uAgents** framework — each agent hands off to the next:
-
-> [!info] The agents
-> - **Query Generator** — turns your question into SQL with **Groq LLaMA**.
-> - **Query Checker** — validates the SQL against your schema before it runs.
-> - **Query Executor** — runs it and pulls the dataset.
-> - **Query Analyzer** — analyzes the result and builds the visualizations.
+A **4-agent pipeline** on **uAgents**, each agent handing off to the next: the
+**Query Generator** turns your question into SQL with **Groq LLaMA**, the **Query
+Checker** validates it against your schema, the **Query Executor** runs it and
+pulls the dataset, and the **Query Analyzer** builds the visualizations.
 
 ![databae — Simplify Databases](/projects/databae/01.png)
 
-> [!info] Stack
-> Next.js · Shadcn · Framer Motion · FastAPI · Python · Groq LLaMA · uAgents · Pandas
+**Stack** — Next.js · Shadcn · Framer Motion · FastAPI · Python · Groq LLaMA · uAgents · Pandas.
 
 ## Moments
 
@@ -390,18 +321,15 @@ Sibling project to [[LandDrop]]. Built on the [[Stack]].`;
 
 const CONTACT = `# Contact
 
-> [!tip] The fastest way to reach me is email
-> [davel.radindra2@gmail.com](mailto:davel.radindra2@gmail.com)
+The fastest way to reach me is email — [davel.radindra2@gmail.com](mailto:davel.radindra2@gmail.com).
 
-> [!example] Elsewhere
-> - 💼 [linkedin.com/in/davelradindra](https://linkedin.com/in/davelradindra)
-> - 🐙 [github.com/DavelRad](https://github.com/DavelRad)
-> - 🐦 [@davelradindra](https://x.com/)
-> - 🌐 [davelradindra.com](https://davelradindra.com)
+- 💼 [linkedin.com/in/davelradindra](https://linkedin.com/in/davelradindra)
+- 🐙 [github.com/DavelRad](https://github.com/DavelRad)
+- 🐦 [@davelradindra](https://x.com/)
+- 🌐 [davelradindra.com](https://davelradindra.com)
 
-> [!quote]
-> Currently open to **select work**. If you're building something hard in AI
-> dev tools or agentic systems, let's talk.
+> Currently open to **select work**. If you're building something hard in AI dev
+> tools or agentic systems, let's talk.
 
 Back to [[About]] · [[Home]].`;
 
