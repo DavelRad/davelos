@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 320" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif">
+  <defs>
+    <linearGradient id="orch" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6b6f8a"/>
+    </marker>
+  </defs>
+
+  <rect x="1" y="1" width="918" height="318" rx="16" fill="#15161f" stroke="#2a2b3a" stroke-width="1"/>
+
+  <text x="28" y="40" fill="#a78bfa" font-size="13" font-weight="700" letter-spacing="0.4">FETCH.AI</text>
+  <text x="96" y="40" fill="#7e8398" font-size="13" font-weight="500">· Moderna vaccine-hesitancy platform (Phase 2)</text>
+
+  <!-- 4 agents -->
+  <g>
+    <rect x="28" y="70" width="156" height="44" rx="10" fill="#1d1e2b" stroke="#3a3b50"/>
+    <text x="106" y="97" text-anchor="middle" fill="#ececf5" font-size="12.5" font-weight="600">Insights agent</text>
+
+    <rect x="28" y="126" width="156" height="44" rx="10" fill="#1d1e2b" stroke="#3a3b50"/>
+    <text x="106" y="153" text-anchor="middle" fill="#ececf5" font-size="12.5" font-weight="600">Resources agent</text>
+
+    <rect x="28" y="182" width="156" height="44" rx="10" fill="#1d1e2b" stroke="#3a3b50"/>
+    <text x="106" y="209" text-anchor="middle" fill="#ececf5" font-size="12.5" font-weight="600">Voice agent</text>
+
+    <rect x="28" y="238" width="156" height="44" rx="10" fill="#1d1e2b" stroke="#3a3b50"/>
+    <text x="106" y="265" text-anchor="middle" fill="#ececf5" font-size="12.5" font-weight="600">Social agent</text>
+  </g>
+
+  <!-- orchestration -->
+  <rect x="372" y="134" width="176" height="84" rx="12" fill="url(#orch)" stroke="#a78bfa"/>
+  <text x="460" y="168" text-anchor="middle" fill="#ffffff" font-size="13.5" font-weight="700">Orchestration</text>
+  <text x="460" y="188" text-anchor="middle" fill="#e9dcff" font-size="10">uAgents · REST + chat</text>
+  <text x="460" y="203" text-anchor="middle" fill="#e9dcff" font-size="10">ASI1 query routing</text>
+
+  <!-- converging arrows -->
+  <g stroke="#6b6f8a" stroke-width="1.5" fill="none">
+    <line x1="184" y1="92"  x2="368" y2="160" marker-end="url(#arr)"/>
+    <line x1="184" y1="148" x2="368" y2="168" marker-end="url(#arr)"/>
+    <line x1="184" y1="204" x2="368" y2="184" marker-end="url(#arr)"/>
+    <line x1="184" y1="260" x2="368" y2="192" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- dashboard -->
+  <rect x="700" y="134" width="190" height="84" rx="12" fill="#1d1e2b" stroke="#3a3b50"/>
+  <text x="795" y="170" text-anchor="middle" fill="#ececf5" font-size="13" font-weight="600">Next.js 14 dashboard</text>
+  <text x="795" y="190" text-anchor="middle" fill="#8a8fa6" font-size="10">maps · charts · health boards</text>
+
+  <line x1="548" y1="176" x2="696" y2="176" stroke="#6b6f8a" stroke-width="1.6" marker-end="url(#arr)"/>
+
+  <!-- data layer -->
+  <text x="460" y="298" text-anchor="middle" fill="#7e8398" font-size="10.5">Data layer: Supabase (19 datasets) · Qdrant semantic search · containerized with Docker / Nginx</text>
+</svg>

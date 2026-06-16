@@ -50,10 +50,10 @@ with [[About]], see what I'm shipping in [[Now]], or jump to [[Nogic]].
 > 🧑‍💻 [[About]] — who I am, how I work · 🚀 [[Now]] — what I'm building
 
 > [!note] Work
-> [[Nogic]] · [[Fetch.ai]] · [[Headstarter]] · [[Jonajo]]
+> [[Nogic]] · [[Fetch.ai]] · [[Jonajo]] · [[Headstarter]]
 
 > [!example] Projects
-> [[htmlnote]] · [[LandDrop]] · [[Databae]] · [[HoloChat]] · [[Particle]] · [[More Projects]]
+> [[LandDrop]] · [[Databae]] · [[htmlnote]] · [[Particle]] · [[HoloChat]] · [[More Projects]]
 
 > [!tip] Reference
 > 🧰 [[Stack]] — languages, frameworks, infra · 📬 [[Contact]]
@@ -131,6 +131,8 @@ const NOGIC = `# Nogic
 
 ## How it works
 
+![How a code change gets read and explained](/diagrams/nogic-pipeline.svg)
+
 > [!info] Retrieval + agent loop
 > A custom **BM25 + LLM-rerank** code-retrieval system feeds a **6-tool agent
 > loop**, with a **hallucination-checking verification pass** against sandboxed
@@ -156,6 +158,8 @@ the **uAgents** framework.
 > [!abstract] What it is
 > A multi-agent platform for **Moderna** analyzing **vaccine hesitancy** across
 > demographic, social-media, and voice data. \`May – Aug 2025\`
+
+![Moderna multi-agent platform — four agents orchestrated into a Next.js dashboard](/diagrams/fetchai-agents.svg)
 
 > [!success] 4-agent system
 > **Insights · Resources · Voice · Social** — orchestrated over **REST + chat
@@ -222,7 +226,9 @@ const HTMLNOTE = `# htmlnote
 > htmlnote opens a review tab — click any element, leave a note, then copy the
 > notes back into chat. The tightest loop for fixing AI-built UIs.
 
-[![htmlnote demo](https://img.youtube.com/vi/88mcHRczZlU/hqdefault.jpg)](https://youtu.be/88mcHRczZlU)
+\`\`\`youtube
+88mcHRczZlU
+\`\`\`
 
 > [!success] Shipped OSS · a Claude Code plugin
 > Distributed via \`/plugin install htmlnote\` with precompiled **binaries for
@@ -244,7 +250,9 @@ const HOLOCHAT = `# HoloChat
 > A multi-model AI support chatbot that **picks the right model per query**,
 > each with a distinct personality. Built at [[Headstarter]].
 
-[![HoloChat demo](https://img.youtube.com/vi/t6njzBo5tko/hqdefault.jpg)](https://youtu.be/t6njzBo5tko)
+\`\`\`youtube
+t6njzBo5tko
+\`\`\`
 
 > [!success] 1,000+ users
 > Three routed assistants:
@@ -313,30 +321,58 @@ The toolkit behind [[Nogic]], [[htmlnote]], and projects like [[LandDrop]] and
 
 const LANDDROP = `# LandDrop
 
-> [!success] 🏆 Hack for Social Impact 2024 — Grand Prize, Fetch.ai track
+> [!quote] From soil to society — visualize, analyze, understand
+> The UN reports **40% of Earth's land is already degraded**, heading toward 90%
+> by 2050. LandDrop analyzes soil + weather data for any location and surfaces
+> where environmental and economic risk overlap.
+
+> [!success] 🏆 Hack for Social Impact 2024 — Global Good Prize (Fetch.ai track)
 > Earned a ⭐ on GitHub.
 
-> [!abstract] What it is
-> A UN-focused land-degradation and socioeconomic analysis tool powered by
-> **uAgents** — surfacing where environmental and economic risk overlap, with
-> interactive mapping and a chatbot for data-driven decisions.
+![Soil analysis for any location — density, temperature, moisture and drought risk, with a Fetch AI agent answering land-degradation questions](/projects/landdrop/01.png)
+
+*Pick a location → get soil density, temperature, moisture and drought-risk, with a Fetch agent answering questions like crop viability.*
+
+## How it works
+
+> [!info] Three agents on uAgents
+> - **Environmentalist** — retrieves the environmental + soil datasets.
+> - **Socioeconomist** — gathers the social and economic data.
+> - **Predictor** — forecasts degradation and drought trends.
+>
+> It all flows into interactive maps, correlation graphs, and summaries.
 
 > [!info] Stack
-> FastAPI · Next.js · uAgents · Azure · Mapbox
+> Next.js · FastAPI · uAgents · GPT-4 (Azure) · Mapbox
 
 Same agentic toolkit as [[Databae]] and my work at [[Fetch.ai]].`;
 
 const DATABAE = `# Databae
 
-> [!success] 🏆 CalHacks 2024 — Award Winner
+> [!quote] Simplify databases for everyone
+> Not everyone wants to write SQL. **Databae** lets anyone ask a question in
+> plain English and get the right query, the result, and an analysis back.
 
-> [!abstract] What it is
-> Natural-language-to-SQL built on **uAgents** and **Groq LLaMA** — ask a
-> question, get a correct query and result against your schema. Next.js / Shadcn
-> / Framer Motion front end with plaintext or Pandas output.
+> [!success] 🏆 CalHacks 11.0 — Fetch.ai Agentic Track winner
+
+![Ask in plain English — Databae writes and runs the SQL, then returns the result table](/projects/databae/02.png)
+
+*Ask "give me a list of all the participants" → Databae writes the SQL, validates it, runs it, and returns the table.*
+
+## How it works
+
+A **4-agent pipeline** on the **uAgents** framework — each agent hands off to the next:
+
+> [!info] The agents
+> - **Query Generator** — turns your question into SQL with **Groq LLaMA**.
+> - **Query Checker** — validates the SQL against your schema before it runs.
+> - **Query Executor** — runs it and pulls the dataset.
+> - **Query Analyzer** — analyzes the result and builds the visualizations.
+
+![databae — Simplify Databases](/projects/databae/01.png)
 
 > [!info] Stack
-> Next.js · FastAPI · Python · Groq · uAgents
+> Next.js · Shadcn · Framer Motion · FastAPI · Python · Groq LLaMA · uAgents · Pandas
 
 Sibling project to [[LandDrop]]. Built on the [[Stack]].`;
 
@@ -369,7 +405,6 @@ export const vaultNotes: VaultNote[] = [
       { key: "Role", value: "Software Engineer & Co-founder" },
       { key: "Location", value: "San Francisco, CA" },
       { key: "Status", value: "Open to select work" },
-      { key: "Website", value: "https://davelradindra.com", kind: "link" },
     ],
     tags: ["engineer", "founder", "ai"],
   },
@@ -479,10 +514,10 @@ export const vaultNotes: VaultNote[] = [
 /** Folder tree for the file explorer (order matters). */
 export const vaultTree: VaultFolder[] = [
   { name: "Davel", notes: ["About", "Now"] },
-  { name: "Work", notes: ["Nogic", "Fetch.ai", "Headstarter", "Jonajo"] },
+  { name: "Work", notes: ["Nogic", "Fetch.ai", "Jonajo", "Headstarter"] },
   {
     name: "Projects",
-    notes: ["htmlnote", "LandDrop", "Databae", "HoloChat", "Particle", "More Projects"],
+    notes: ["LandDrop", "Databae", "htmlnote", "Particle", "HoloChat", "More Projects"],
   },
   // top-level notes (folder === "")
   { name: "", notes: ["Home", "Stack", "Contact"] },
