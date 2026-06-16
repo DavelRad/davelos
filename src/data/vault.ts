@@ -226,9 +226,7 @@ const HTMLNOTE = `# htmlnote
 > htmlnote opens a review tab — click any element, leave a note, then copy the
 > notes back into chat. The tightest loop for fixing AI-built UIs.
 
-\`\`\`youtube
-88mcHRczZlU
-\`\`\`
+![htmlnote — visual review for AI-generated HTML (demo)](https://youtu.be/88mcHRczZlU)
 
 > [!success] Shipped OSS · a Claude Code plugin
 > Distributed via \`/plugin install htmlnote\` with precompiled **binaries for
@@ -250,9 +248,7 @@ const HOLOCHAT = `# HoloChat
 > A multi-model AI support chatbot that **picks the right model per query**,
 > each with a distinct personality. Built at [[Headstarter]].
 
-\`\`\`youtube
-t6njzBo5tko
-\`\`\`
+![HoloChat — multi-model AI support chatbot (demo)](https://youtu.be/t6njzBo5tko)
 
 > [!success] 1,000+ users
 > Three routed assistants:

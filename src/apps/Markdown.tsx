@@ -1,10 +1,4 @@
-import {
-  Children,
-  isValidElement,
-  useState,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { Children, isValidElement, type ReactNode } from "react";
 import ReactMarkdown, {
   defaultUrlTransform,
   type Components,
@@ -43,36 +37,29 @@ const HL_LANGUAGES = {
   py: python,
 };
 
+/** Extract an 11-char YouTube video id from any youtu.be / youtube.com URL. */
+function youtubeId(url: string): string | null {
+  const m = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/,
+  );
+  return m ? m[1] : null;
+}
+
 /**
- * Lazy ("lite") YouTube embed: shows the poster thumbnail until clicked, then
- * swaps in the real iframe — so the heavy YouTube player only loads on demand.
- * Authored in markdown as a fenced ```youtube block containing the video id.
+ * An embedded YouTube player (real iframe, lazy-loaded so it doesn't block the
+ * note). Authored in markdown as a normal image link to a YouTube URL:
+ * `![caption](https://youtu.be/VIDEOID)`.
  */
 function YouTubeEmbed({ id }: { id: string }) {
-  const [play, setPlay] = useState(false);
   return (
     <span className="ob-video">
-      {play ? (
-        <iframe
-          src={`https://www.youtube.com/embed/${id}?autoplay=1&rel=0`}
-          title="YouTube video player"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      ) : (
-        <button type="button" onClick={() => setPlay(true)} aria-label="Play video">
-          <img
-            src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`}
-            alt=""
-            loading="lazy"
-          />
-          <span className="ob-video-play" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </span>
-        </button>
-      )}
+      <iframe
+        src={`https://www.youtube.com/embed/${id}?rel=0`}
+        title="YouTube video player"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
     </span>
   );
 }
@@ -273,6 +260,8 @@ export function Markdown({
     },
     img({ src, alt }) {
       const url = typeof src === "string" ? src : "";
+      const yt = youtubeId(url);
+      if (yt) return <YouTubeEmbed id={yt} />;
       if (isObsidian) {
         return (
           <img
@@ -290,18 +279,6 @@ export function Markdown({
       return (
         <img src={url} alt={alt ?? ""} loading="lazy" className="inline-block align-middle" />
       );
-    },
-    pre({ children }) {
-      // ```youtube blocks → lazy video embed (instead of a code block)
-      const codeEl = Children.toArray(children).find((c) =>
-        isValidElement(c),
-      ) as ReactElement<{ className?: string; children?: ReactNode }> | undefined;
-      const cls = codeEl?.props?.className ?? "";
-      if (/language-youtube/.test(cls)) {
-        const id = nodeText(codeEl?.props?.children).trim();
-        if (id) return <YouTubeEmbed id={id} />;
-      }
-      return <pre>{children}</pre>;
     },
   };
 
