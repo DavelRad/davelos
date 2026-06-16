@@ -1,0 +1,70 @@
+# CI/CD — build + deploy on push to main.
+#   • Backend  -> Cloud Run service `ask-davel`  (from server/)
+#   • Frontend -> Firebase Hosting               (from dist/)
+#
+# Requires two GitHub repo secrets (Settings → Secrets and variables → Actions):
+#   GCP_PROJECT_ID  — your dedicated GCP project id (e.g. davel-portfolio)
+#   GCP_SA_KEY      — JSON key for a deploy service account with roles:
+#                     run.admin, iam.serviceAccountUser,
+#                     firebasehosting.admin, cloudbuild.builds.editor,
+#                     artifactregistry.writer, secretmanager.secretAccessor
+#
+# (Workload Identity Federation is the more secure alternative to a JSON key —
+# see DEPLOY.md. This SA-key flow is the simplest to get green first.)
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      REGION: us-central1
+      SERVICE: ask-davel
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Build frontend
+        run: |
+          npm ci
+          npm run build
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy backend (Cloud Run)
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --source server \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region "$REGION" \
+            --allow-unauthenticated \
+            --max-instances 1 \
+            --memory 512Mi \
+            --update-secrets ANTHROPIC_API_KEY=anthropic-api-key:latest \
+            --quiet
+
+      - name: Deploy frontend (Firebase Hosting)
+        run: |
+          npx firebase-tools@latest deploy \
+            --only hosting \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --non-interactive

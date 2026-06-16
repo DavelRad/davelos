@@ -1,0 +1,873 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Theme — design tokens via CSS variables (dark default + light)
+ * Tailwind v4 reads these through the @theme inline mapping below.
+ * ------------------------------------------------------------------ */
+
+:root,
+.dark {
+  /* warm near-black canvas — not cold blue slate */
+  --canvas: #0a0a0b;
+  --surface: #111113;
+  --surface-2: #16161a;
+  --ink: #eceae3;
+  --ink-muted: #9a988f;
+  --ink-faint: #67655e;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  /* signal green — kept ONLY for genuine brand surfaces (NOT OS chrome). */
+  --accent: #4ade80;
+  --accent-deep: #3fb950;
+  --accent-soft: rgba(74, 222, 128, 0.12);
+  --accent-glow: rgba(74, 222, 128, 0.16);
+
+  /* ---- Neutral OS accent (the desktop itself is neutral, like real macOS).
+     A restrained system blue is used ONLY for native selection / focus,
+     mirroring macOS. Everything else in the chrome is translucent gray. ---- */
+  --os-accent: #3b82f6;
+  --os-accent-soft: rgba(255, 255, 255, 0.08);
+  --os-sel: rgba(59, 130, 246, 0.32);
+  --os-ring: rgba(120, 130, 145, 0.55);
+
+  /* Liquid Glass material (Tahoe) for menu bar / dock / panels */
+  --glass-bg: rgba(30, 32, 40, 0.5);
+  --glass-bg-strong: rgba(28, 30, 38, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-highlight: rgba(255, 255, 255, 0.38);
+
+  /* inactive traffic-light color (real macOS dims them gray) */
+  --tl-inactive: #565659;
+
+  --grain-opacity: 0.04;
+
+  /* GitHub-browser canvas — real GitHub dark theme tokens */
+  --gh-canvas: #0d1117;
+  --gh-fg: #c9d1d9;
+  --gh-muted: #8b949e;
+  --gh-border: #30363d;
+  --gh-link: #58a6ff;
+  --gh-btn: #21262d;
+  --gh-green: #238636;
+  --gh-green-hover: #2ea043;
+  --gh-code-bg: rgba(110, 118, 129, 0.16);
+  --gh-blockquote: #161b22;
+
+  /* contribution heatmap — real GitHub green scale */
+  --contrib-0: #161b22;
+  --contrib-1: #0e4429;
+  --contrib-2: #006d32;
+  --contrib-3: #26a641;
+  --contrib-4: #39d353;
+}
+
+.light {
+  --canvas: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #efeee8;
+  --ink: #15140f;
+  --ink-muted: #5d5b53;
+  --ink-faint: #8a877d;
+  --line: rgba(0, 0, 0, 0.09);
+  --line-strong: rgba(0, 0, 0, 0.16);
+
+  --accent: #2ea043;
+  --accent-deep: #238636;
+  --accent-soft: rgba(46, 160, 67, 0.1);
+  --accent-glow: rgba(46, 160, 67, 0.14);
+
+  /* Neutral OS accent (light) */
+  --os-accent: #2563eb;
+  --os-accent-soft: rgba(0, 0, 0, 0.05);
+  --os-sel: rgba(37, 99, 235, 0.22);
+  --os-ring: rgba(120, 130, 145, 0.5);
+
+  /* Liquid Glass material — light variant */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+
+  /* inactive traffic-light color (light) */
+  --tl-inactive: #cfcfd2;
+
+  --grain-opacity: 0.02;
+
+  /* GitHub-browser stays on GitHub's real dark theme regardless of OS theme
+     (matches a developer's GitHub set to dark) — tokens identical to .dark. */
+  --gh-canvas: #0d1117;
+  --gh-fg: #c9d1d9;
+  --gh-muted: #8b949e;
+  --gh-border: #30363d;
+  --gh-link: #58a6ff;
+  --gh-btn: #21262d;
+  --gh-green: #238636;
+  --gh-green-hover: #2ea043;
+  --gh-code-bg: rgba(110, 118, 129, 0.16);
+  --gh-blockquote: #161b22;
+
+  --contrib-0: #161b22;
+  --contrib-1: #0e4429;
+  --contrib-2: #006d32;
+  --contrib-3: #26a641;
+  --contrib-4: #39d353;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
+
+  /* neutral OS accent */
+  --color-os-accent: var(--os-accent);
+  --color-os-ring: var(--os-ring);
+
+  /* app brand colors */
+  --color-claude: #d97757;
+  --color-spotify: #1db954;
+
+  /* GitHub brand tokens (for the GitHub app) */
+  --color-gh-canvas: var(--gh-canvas);
+  --color-gh-fg: var(--gh-fg);
+  --color-gh-muted: var(--gh-muted);
+  --color-gh-border: var(--gh-border);
+  --color-gh-link: var(--gh-link);
+  --color-gh-btn: var(--gh-btn);
+  --color-gh-green: var(--gh-green);
+  --color-gh-green-hover: var(--gh-green-hover);
+
+  /* SF Pro / Apple system stack everywhere in the OS + UI — the biggest
+     realism lever. On Davel's Mac this renders real SF Pro Text/Display. */
+  --font-display:
+    -apple-system, "SF Pro Display", "SF Pro Text", BlinkMacSystemFont,
+    system-ui, "Helvetica Neue", sans-serif;
+  --font-sans:
+    -apple-system, "SF Pro Text", "SF Pro Display", BlinkMacSystemFont,
+    system-ui, "Helvetica Neue", sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Monaco, monospace;
+  /* GitHub uses its own platform stack (SF on macOS). */
+  --font-gh:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
+    Arial, sans-serif;
+}
+
+/* ------------------------------------------------------------------ *
+ * Base
+ * ------------------------------------------------------------------ */
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  letter-spacing: -0.003em; /* SF-like optical tightening */
+  overflow: hidden; /* app-shell: stage handles its own scroll */
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* Native text selection — restrained neutral system blue (macOS-like). */
+::selection {
+  background: var(--os-sel);
+  color: var(--ink);
+}
+
+/* Neutral OS focus ring (not brand green). */
+:focus-visible {
+  outline: 2px solid var(--os-ring);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Every interactive affordance gets a pointer cursor + snappy transitions, so
+ * the desktop reads as tactile. (Explicit active:scale lives on key controls;
+ * this is the baseline.) */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+label[for],
+summary,
+select,
+input[type="range"],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+}
+button:disabled,
+[aria-disabled="true"] {
+  cursor: default;
+}
+
+/* Refined scrollbars within the stage */
+.scroll-region {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.scroll-region::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-region::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 99px;
+}
+.scroll-region::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Display headline utility — SF Pro Display optical sizing */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* Mono micro-label */
+.label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Hairline gradient text accent for select headline words */
+.text-accent-grad {
+  color: var(--accent);
+}
+
+/* Film grain overlay (very low opacity) */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ------------------------------------------------------------------ *
+ * Wallpaper — Apple-caliber abstract gradient (Tahoe-style).
+ * .dark = deep dusk/aurora (indigo → teal → warm horizon)
+ * .light = bright airy (soft blue → lavender → warm)
+ * ------------------------------------------------------------------ */
+
+/* DARK (default) */
+.wallpaper-base {
+  /* Davel's real macOS Tahoe Day aerial — dusk-graded frame for the dark desktop */
+  background-image: url("/wallpaper-dusk.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.wallpaper-blobs {
+  /* subtle scrims so the transparent menu bar (top) + dock (bottom) stay legible over the photo */
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.34) 0%, transparent 14%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.26) 0%, transparent 16%);
+}
+.wallpaper-grain {
+  opacity: 0.05;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* LIGHT */
+.light .wallpaper-base {
+  /* bright day frame for the light desktop */
+  background-image: url("/wallpaper.jpg");
+}
+.light .wallpaper-blobs {
+  /* lighter scrims; the day wallpaper is bright so keep menu-bar text legible */
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0%, transparent 12%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.14) 0%, transparent 14%);
+}
+.light .wallpaper-grain {
+  opacity: 0.025;
+}
+
+/* ------------------------------------------------------------------ *
+ * Liquid Glass material utility (Tahoe) — heavy blur + saturate,
+ * translucent fill, top specular highlight, hairline border.
+ * ------------------------------------------------------------------ */
+.liquid-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 0.5px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 18px 50px rgba(0, 0, 0, 0.35);
+}
+.liquid-glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(50px) saturate(180%);
+  -webkit-backdrop-filter: blur(50px) saturate(180%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * GitHub-flavored markdown — themed to mirror GitHub's rendered MD in
+ * both dark and light. Scoped to .markdown-body (the GitHub browser app).
+ * ------------------------------------------------------------------ */
+
+.markdown-body {
+  color: var(--gh-fg);
+  font-family: var(--font-gh);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  word-wrap: break-word;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0;
+}
+.markdown-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  font-family: var(--font-gh);
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 1.4em 0 0.6em;
+  letter-spacing: -0.01em;
+}
+.markdown-body h1 {
+  font-size: 1.65rem;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--gh-border);
+}
+.markdown-body h2 {
+  font-size: 1.3rem;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--gh-border);
+}
+.markdown-body h3 {
+  font-size: 1.08rem;
+}
+.markdown-body h4 {
+  font-size: 0.95rem;
+}
+
+.markdown-body p,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body blockquote,
+.markdown-body table,
+.markdown-body pre {
+  margin: 0 0 1em;
+}
+
+.markdown-body a {
+  color: var(--gh-link);
+  text-decoration: none;
+}
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body strong {
+  font-weight: 600;
+  color: var(--gh-fg);
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5em;
+}
+.markdown-body ul {
+  list-style: disc;
+}
+.markdown-body ol {
+  list-style: decimal;
+}
+.markdown-body li {
+  margin: 0.25em 0;
+}
+.markdown-body li::marker {
+  color: var(--gh-muted);
+}
+
+.markdown-body blockquote {
+  padding: 0.4em 1em;
+  border-left: 3px solid var(--gh-border);
+  background: transparent;
+  color: var(--gh-muted);
+  border-radius: 0;
+}
+.markdown-body blockquote > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--gh-code-bg);
+  padding: 0.18em 0.4em;
+  border-radius: 5px;
+}
+
+.markdown-body pre {
+  background: var(--gh-blockquote);
+  border: 1px solid var(--gh-border);
+  border-radius: 8px;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
+.markdown-body table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--gh-border);
+  padding: 0.5em 0.85em;
+  text-align: left;
+}
+.markdown-body th {
+  background: var(--gh-blockquote);
+  font-weight: 600;
+}
+.markdown-body tr:nth-child(2n) td {
+  background: rgba(110, 118, 129, 0.06);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  margin: 1px;
+}
+
+.markdown-body hr {
+  height: 1px;
+  border: 0;
+  background: var(--gh-border);
+  margin: 1.6em 0;
+}
+
+.markdown-body .not-prose {
+  font-family: var(--font-sans);
+}
+
+/* ------------------------------------------------------------------ *
+ * Obsidian reading view — dark theme, purple accent. Scoped to
+ * .obsidian-body (the Obsidian app). Always dark (it's a dark vault).
+ * ------------------------------------------------------------------ */
+
+.obsidian-body {
+  --ob-fg: #dadada;
+  --ob-muted: #9a9a9e;
+  --ob-accent: #a78bfa;
+  --ob-accent-2: #c4b5fd;
+  --ob-border: #393b40;
+  --ob-code-bg: rgba(168, 130, 255, 0.1);
+  color: var(--ob-fg);
+  font-family: var(--font-sans);
+  font-size: 0.94rem;
+  line-height: 1.65;
+  max-width: 46rem;
+  margin: 0 auto;
+  word-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+.obsidian-body > *:first-child {
+  margin-top: 0;
+}
+.obsidian-body h1,
+.obsidian-body h2,
+.obsidian-body h3,
+.obsidian-body h4 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.25;
+  color: #fbfbfc;
+  letter-spacing: -0.015em;
+}
+.obsidian-body h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0.2em 0 0.5em;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--ob-border);
+}
+.obsidian-body h2 {
+  font-size: 1.4rem;
+  margin: 1.5em 0 0.5em;
+  padding-left: 0.55em;
+  border-left: 3px solid color-mix(in srgb, var(--ob-accent) 65%, transparent);
+}
+.obsidian-body h3 {
+  font-size: 1.12rem;
+  margin: 1.3em 0 0.4em;
+  color: #eae6f7;
+}
+.obsidian-body h4 {
+  font-size: 0.98rem;
+  margin: 1.1em 0 0.4em;
+  color: var(--ob-accent-2);
+}
+.obsidian-body p,
+.obsidian-body ul,
+.obsidian-body ol,
+.obsidian-body blockquote,
+.obsidian-body table,
+.obsidian-body pre {
+  margin: 0 0 0.85em;
+}
+.obsidian-body a {
+  color: var(--ob-accent);
+  text-decoration: none;
+}
+.obsidian-body a:hover {
+  text-decoration: underline;
+}
+/* the [[wikilink]] look — Obsidian's filled-pill internal links */
+.obsidian-body a.wikilink {
+  color: var(--ob-accent-2);
+  text-decoration: none;
+  background: color-mix(in srgb, var(--ob-accent) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ob-accent) 28%, transparent);
+  border-radius: 5px;
+  padding: 0.02em 0.34em;
+  font-weight: 500;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.obsidian-body a.wikilink:hover {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--ob-accent) 24%, transparent);
+  border-color: color-mix(in srgb, var(--ob-accent) 50%, transparent);
+}
+.obsidian-body strong {
+  font-weight: 650;
+  color: #f4f4f6;
+}
+.obsidian-body em {
+  color: #e6e6ea;
+}
+.obsidian-body ul,
+.obsidian-body ol {
+  padding-left: 1.35em;
+}
+.obsidian-body ul {
+  list-style: disc;
+}
+.obsidian-body ol {
+  list-style: decimal;
+}
+.obsidian-body li {
+  margin: 0.12em 0;
+}
+.obsidian-body li::marker {
+  color: color-mix(in srgb, var(--ob-accent) 70%, transparent);
+}
+/* plain blockquote (no [!type]) */
+.obsidian-body blockquote {
+  padding: 0.25em 0 0.25em 1em;
+  border-left: 3px solid color-mix(in srgb, var(--ob-accent) 55%, transparent);
+  color: var(--ob-muted);
+  font-style: italic;
+}
+.obsidian-body blockquote > *:last-child {
+  margin-bottom: 0;
+}
+.obsidian-body code {
+  font-family: var(--font-mono);
+  font-size: 0.84em;
+  background: var(--ob-code-bg);
+  padding: 0.15em 0.42em;
+  border-radius: 4px;
+  color: #e3def7;
+}
+.obsidian-body pre {
+  background: #191920;
+  border: 1px solid var(--ob-border);
+  border-radius: 8px;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+.obsidian-body pre code {
+  background: transparent;
+  padding: 0;
+  color: #cfcfe0;
+}
+.obsidian-body table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  border-radius: 8px;
+}
+.obsidian-body th,
+.obsidian-body td {
+  border: 1px solid var(--ob-border);
+  padding: 0.45em 0.8em;
+  text-align: left;
+}
+.obsidian-body th {
+  background: rgba(168, 130, 255, 0.08);
+  color: #efeaff;
+  font-weight: 600;
+}
+.obsidian-body tr:nth-child(2n) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+.obsidian-body hr {
+  height: 1px;
+  border: 0;
+  background: color-mix(in srgb, var(--ob-border) 70%, transparent);
+  margin: 1.6em 0;
+}
+
+/* embedded images / thumbnails */
+.obsidian-body .ob-embed {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--ob-border);
+  box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.55);
+  margin: 0.2em 0 0.4em;
+}
+.obsidian-body a:has(> .ob-embed) {
+  display: inline-block;
+  text-decoration: none;
+}
+.obsidian-body a:has(> .ob-embed):hover .ob-embed {
+  border-color: color-mix(in srgb, var(--ob-accent) 60%, transparent);
+}
+
+/* inline + property #tag pills */
+.obsidian-body .ob-tag,
+.ob-tag {
+  display: inline-block;
+  font-size: 0.78em;
+  font-weight: 500;
+  color: var(--ob-accent-2, #c4b5fd);
+  background: color-mix(in srgb, #a78bfa 14%, transparent);
+  border: 1px solid color-mix(in srgb, #a78bfa 26%, transparent);
+  border-radius: 999px;
+  padding: 0.02em 0.5em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ *
+ * Obsidian callouts — tinted, accent-bordered admonition blocks.
+ * Per-type color via a CSS custom prop set by .ob-callout-<color>.
+ * ------------------------------------------------------------------ */
+.obsidian-body .ob-callout {
+  --co: 167, 139, 250; /* default = purple-ish accent (rgb) */
+  margin: 0 0 0.95em;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--co), 0.32);
+  border-left: 3px solid rgb(var(--co));
+  background: rgba(var(--co), 0.08);
+  padding: 0.7em 0.95em;
+}
+.obsidian-body .ob-callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-weight: 650;
+  color: rgb(var(--co));
+  letter-spacing: -0.01em;
+}
+.obsidian-body .ob-callout-icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex-shrink: 0;
+}
+.obsidian-body .ob-callout-body {
+  margin-top: 0.4em;
+  color: var(--ob-fg);
+}
+.obsidian-body .ob-callout-body > *:last-child {
+  margin-bottom: 0;
+}
+.obsidian-body .ob-callout-body p,
+.obsidian-body .ob-callout-body ul,
+.obsidian-body .ob-callout-body ol {
+  margin-bottom: 0.5em;
+}
+
+/* callout palette (rgb triples) */
+.ob-callout-blue {
+  --co: 84, 156, 255;
+}
+.ob-callout-cyan {
+  --co: 64, 196, 221;
+}
+.ob-callout-green {
+  --co: 94, 211, 154;
+}
+.ob-callout-yellow {
+  --co: 226, 192, 76;
+}
+.ob-callout-orange {
+  --co: 230, 159, 70;
+}
+.ob-callout-gray {
+  --co: 158, 158, 166;
+}
+.ob-callout-teal {
+  --co: 56, 191, 168;
+}
+.ob-callout-purple {
+  --co: 167, 139, 250;
+}
+.ob-callout-red {
+  --co: 233, 100, 110;
+}
+
+/* ------------------------------------------------------------------ *
+ * highlight.js theme — a refined dark/light token palette (used by
+ * rehype-highlight in markdown code blocks and the about.ts editor).
+ * ------------------------------------------------------------------ */
+
+.hljs {
+  color: var(--gh-fg);
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type {
+  color: #ff7b9c;
+}
+.light .hljs-keyword,
+.light .hljs-selector-tag,
+.light .hljs-literal,
+.light .hljs-type {
+  color: #cf222e;
+}
+.hljs-string,
+.hljs-attr,
+.hljs-template-tag,
+.hljs-meta-string {
+  color: #a5d6ff;
+}
+.light .hljs-string,
+.light .hljs-attr,
+.light .hljs-template-tag,
+.light .hljs-meta-string {
+  color: #0a3069;
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet {
+  color: #d2a8ff;
+}
+.light .hljs-number,
+.light .hljs-symbol {
+  color: #8250df;
+}
+.hljs-title,
+.hljs-section,
+.hljs-function .hljs-title,
+.hljs-name {
+  color: #79c0ff;
+}
+.light .hljs-title,
+.light .hljs-section,
+.light .hljs-name {
+  color: #0550ae;
+}
+.hljs-attribute,
+.hljs-variable,
+.hljs-property {
+  color: var(--gh-fg);
+}
+.hljs-built_in,
+.hljs-class .hljs-title {
+  color: #ffa657;
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
+
+/* mobile: allow body scroll handling per-app, keep the shell fixed */
+@media (max-width: 819px) {
+  body {
+    overflow: hidden;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * App brand tokens — each app uses its REAL product palette, regardless
+ * of the (neutral) OS theme.
+ *   Claude Code: clay/coral #D97757   ·   Spotify: green #1DB954
+ * ------------------------------------------------------------------ */
+:root {
+  --claude-clay: #d97757;
+  --spotify-green: #1db954;
+}
+
+/* Spotify equalizer bars (used by the now-playing widget). */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
