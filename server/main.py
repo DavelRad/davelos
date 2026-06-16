@@ -25,7 +25,7 @@ from typing import Any, AsyncIterator
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
 from knowledge import system_prompt
 from ratelimit import Limits, RateLimiter
@@ -246,3 +246,29 @@ async def spotify() -> Any:
 @app.get("/api/health")
 async def health() -> dict[str, Any]:
     return {"status": "ok", "model": MODEL, "ask_enabled": bool(os.environ.get("ANTHROPIC_API_KEY"))}
+
+
+# --------------------------- static SPA (prod) ---------------------------- #
+# In the container the built frontend is copied to ./static and served by this
+# same service, so the whole site (UI + /api) is one Cloud Run service on one
+# origin. Locally there's no ./static dir, so this is skipped and Vite serves
+# the UI (proxying /api here). This catch-all is registered LAST, so the
+# specific /api/* routes above always win.
+_STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(_STATIC_DIR):
+    _INDEX = os.path.join(_STATIC_DIR, "index.html")
+
+    @app.get("/{full_path:path}")
+    async def spa(full_path: str) -> Any:
+        if full_path.startswith("api/"):
+            return JSONResponse({"error": "not_found"}, status_code=404)
+        # serve a real built file if it exists (assets, icons, wallpaper, pdf),
+        # else fall back to index.html for the SPA. Guard against path traversal.
+        candidate = os.path.normpath(os.path.join(_STATIC_DIR, full_path))
+        if (
+            full_path
+            and candidate.startswith(_STATIC_DIR + os.sep)
+            and os.path.isfile(candidate)
+        ):
+            return FileResponse(candidate)
+        return FileResponse(_INDEX)

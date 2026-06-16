@@ -1,0 +1,18 @@
+# Build context trim for the root Dockerfile (Cloud Run --source .).
+.git
+.github
+node_modules
+dist
+dist-ssr
+**/__pycache__/
+**/*.pyc
+*.tsbuildinfo
+server/.venv
+.venv
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+key.json
+firebase-debug.log
