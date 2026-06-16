@@ -223,20 +223,19 @@ export function ClaudeTerminal({
         aria-live="polite"
         aria-label="Claude Code terminal output"
       >
-        {/* clean, minimal Claude Code intro (no heavy ASCII frame) */}
-        <div className="mb-4">
+        {/* Claude Code welcome box */}
+        <div className="mb-4 rounded-lg border border-[#3c3833] px-4 py-3">
           <p className="text-[#ece9e3]">
             <span className="text-claude">✻</span>{" "}
-            <span className="font-semibold">Welcome to Claude Code</span>
+            <span className="font-semibold">Welcome to Claude Code!</span>
           </p>
-          {empty ? (
-            <div className="mt-1.5 space-y-0.5 text-[#8a8782]">
-              <p>Ask anything about Davel, or type <span className="text-[#a8a39c]">help</span>.</p>
-              <p className="text-[#6f6b64]">
-                model: routing (opus · sonnet · haiku) · cwd: ~/davel
-              </p>
-            </div>
-          ) : null}
+          <div className="mt-2 space-y-1 text-[#8a8782]">
+            <p>
+              Ask anything about Davel — or type{" "}
+              <span className="text-[#a8a39c]">/help</span>
+            </p>
+            <p className="text-[#6f6b64]">cwd: ~/davel</p>
+          </div>
         </div>
 
         {lines.map((line) => {
@@ -274,33 +273,36 @@ export function ClaudeTerminal({
           }
         })}
 
-        {/* live prompt line */}
+        {/* Claude Code input box */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void submit(input);
           }}
-          className="mt-2 flex items-center"
+          className="mt-3"
         >
-          <span className="text-claude">{"> "}</span>
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            disabled={busy}
-            spellCheck={false}
-            autoComplete="off"
-            autoCapitalize="off"
-            aria-label="Terminal input"
-            className="ml-1 flex-1 bg-transparent text-[#ece9e3] caret-[#d97757] outline-none placeholder:text-[#6f6b64] disabled:opacity-60"
-            placeholder={busy ? "" : "ask a question…"}
-          />
-          {!busy ? (
-            <span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-[#d97757]/80" />
-          ) : (
-            <span className="text-[#8a8782]">working…</span>
-          )}
+          <div className="flex items-center rounded-lg border border-[#3c3833] px-3 py-2 transition-colors focus-within:border-claude/60">
+            <span className="text-claude">{">"}</span>
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              disabled={busy}
+              spellCheck={false}
+              autoComplete="off"
+              autoCapitalize="off"
+              aria-label="Terminal input"
+              className="ml-2 flex-1 bg-transparent text-[#ece9e3] caret-[#d97757] outline-none placeholder:text-[#6f6b64] disabled:opacity-60"
+              placeholder={busy ? "working…" : "Ask anything about Davel…"}
+            />
+            {busy ? (
+              <span className="ml-2 size-2 shrink-0 animate-pulse rounded-full bg-[#d97757]" />
+            ) : null}
+          </div>
+          <p className="mt-1.5 px-1 text-[0.7rem] text-[#6f6b64]">
+            <span className="text-[#8a8782]">?</span> for shortcuts
+          </p>
         </form>
       </div>
 
