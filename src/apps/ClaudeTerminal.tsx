@@ -281,7 +281,7 @@ export function ClaudeTerminal({
           }}
           className="mt-3"
         >
-          <div className="flex items-center rounded-lg border border-[#3c3833] px-3 py-2 transition-colors focus-within:border-claude/60">
+          <div className="flex items-center rounded-lg border border-[#3c3833] px-3 py-2">
             <span className="text-claude">{">"}</span>
             <input
               ref={inputRef}

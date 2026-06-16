@@ -269,6 +269,15 @@ if os.path.isdir(_STATIC_DIR):
             full_path
             and candidate.startswith(_STATIC_DIR + os.sep)
             and os.path.isfile(candidate)
+            and os.path.basename(candidate) != "index.html"
         ):
-            return FileResponse(candidate)
-        return FileResponse(_INDEX)
+            # hashed build assets are immutable; other static files cache a day
+            cache = (
+                "public, max-age=31536000, immutable"
+                if full_path.startswith("assets/")
+                else "public, max-age=86400"
+            )
+            return FileResponse(candidate, headers={"Cache-Control": cache})
+        # the SPA shell must NOT be cached, so a refresh always loads the current
+        # asset filenames (otherwise a stale index.html → 404s → blank page).
+        return FileResponse(_INDEX, headers={"Cache-Control": "no-cache, must-revalidate"})
