@@ -14,7 +14,14 @@ import { captionFor } from "../data/captions";
  * Thumbnails are inline (<span>/<button>/<img>) so a gallery is valid inside a
  * note paragraph (`![gallery](gallery:<bucket>)`). Styling lives in index.css.
  */
-export function Gallery({ photos }: { photos: string[] }) {
+export function Gallery({
+  photos,
+  variant = "default",
+}: {
+  photos: string[];
+  /** "ios" = full-bleed square grid (the iPhone Photos look). */
+  variant?: "default" | "ios";
+}) {
   const [open, setOpen] = useState<number | null>(null);
   const close = useCallback(() => setOpen(null), []);
   const step = useCallback(
@@ -38,9 +45,10 @@ export function Gallery({ photos }: { photos: string[] }) {
 
   const caption = open !== null ? captionFor(photos[open]) : undefined;
 
+  const ios = variant === "ios";
   return (
-    <span className="ph-gallery">
-      <span className="ph-grid">
+    <span className={ios ? "ph-gallery ph-gallery-ios" : "ph-gallery"}>
+      <span className={ios ? "ph-grid ph-grid-ios" : "ph-grid"}>
         {photos.map((src, i) => {
           const cap = captionFor(src);
           return (
@@ -52,7 +60,7 @@ export function Gallery({ photos }: { photos: string[] }) {
               aria-label={cap ?? `Open photo ${i + 1} of ${photos.length}`}
             >
               <img src={src} alt={cap ?? ""} loading="lazy" />
-              {cap ? <span className="ph-cap">{cap}</span> : null}
+              {cap && !ios ? <span className="ph-cap">{cap}</span> : null}
             </button>
           );
         })}

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Images } from "lucide-react";
 import { cn } from "../lib/cn";
 import { Gallery } from "../components/Gallery";
+import { useViewport } from "../lib/useViewport";
 import { photoSets } from "../data/photos";
 
 /**
@@ -22,11 +23,49 @@ const ALBUMS: { id: string; name: string; sub?: string }[] = (
 ).filter((a) => (photoSets[a.id] ?? []).length > 0);
 
 export function Photos() {
+  const { isMobile } = useViewport();
   const [album, setAlbum] = useState<string>("all");
   const all = useMemo(() => ALBUMS.flatMap((a) => photoSets[a.id] ?? []), []);
   const photos = album === "all" ? all : photoSets[album] ?? [];
   const title =
     album === "all" ? "All Photos" : ALBUMS.find((a) => a.id === album)?.name ?? "";
+
+  // ---- mobile: the iOS Photos app — full-bleed grid, album chips, no sidebar ----
+  if (isMobile) {
+    return (
+      <div className="flex h-full flex-col bg-black text-white">
+        <div className="shrink-0 px-4 pb-1 pt-3">
+          <h1 className="text-[1.7rem] font-bold tracking-tight">{title}</h1>
+          <p className="text-[0.8rem] text-white/55">
+            {photos.length} photo{photos.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        {/* album chips */}
+        <div className="scroll-region flex shrink-0 gap-2 overflow-x-auto px-4 pb-2.5 pt-1.5">
+          <AlbumChip active={album === "all"} onClick={() => setAlbum("all")}>
+            All Photos
+          </AlbumChip>
+          {ALBUMS.map((a) => (
+            <AlbumChip
+              key={a.id}
+              active={album === a.id}
+              onClick={() => setAlbum(a.id)}
+            >
+              {a.name}
+            </AlbumChip>
+          ))}
+        </div>
+        {/* full-bleed grid */}
+        <div className="scroll-region min-h-0 flex-1 overflow-y-auto">
+          {photos.length ? (
+            <Gallery photos={photos} variant="ios" />
+          ) : (
+            <p className="p-4 text-sm text-white/45">No photos yet.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full bg-[#1b1b1d] text-[#e7e7ea]">
@@ -72,6 +111,31 @@ export function Photos() {
         </div>
       </section>
     </div>
+  );
+}
+
+function AlbumChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[0.82rem] font-medium transition-colors",
+        active
+          ? "bg-white text-black"
+          : "bg-white/10 text-white/80 hover:bg-white/15",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

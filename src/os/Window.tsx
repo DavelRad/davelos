@@ -20,8 +20,11 @@ interface WindowProps {
   onMinimize: () => void;
   onToggleMaximize: () => void;
   onMove: (x: number, y: number) => void;
-  onResize: (w: number, h: number) => void;
+  onResize: (w: number, h: number, x?: number, y?: number) => void;
 }
+
+/** The eight macOS resize directions. */
+type ResizeDir = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
 /** A macOS traffic-light control: 12px circle, darker inner border, glyph on
  * the cluster's hover. Gray when the window is inactive (real macOS behavior). */
@@ -102,9 +105,10 @@ export function Window({
   const height = useMotionValue(maximized ? window.innerHeight - MENU_BAR_H - 14 : win.h);
 
   // Sync the transform when position/maximize changes externally (open, restore,
-  // zoom) — but never mid-drag (the drag owns x/y then).
+  // zoom) — but never mid-drag or mid-resize (those own x/y then; a top/left
+  // resize edge moves the origin, so a re-render must not reset it).
   useEffect(() => {
-    if (draggingRef.current) return;
+    if (draggingRef.current || resizingRef.current) return;
     x.set(maximized ? 8 : win.x);
     y.set(maximized ? MENU_BAR_H + 6 : win.y);
   }, [win.x, win.y, maximized, x, y]);
@@ -117,31 +121,55 @@ export function Window({
     height.set(maximized ? window.innerHeight - MENU_BAR_H - 14 : win.h);
   }, [win.w, win.h, maximized, width, height]);
 
-  // bottom-right resize handle — write width/height motion values directly,
-  // clamp to the app's min size, and commit the final size to state on release.
-  function startResize(e: React.PointerEvent) {
+  // Edge/corner resize, macOS-style — any of the 8 directions. We write the
+  // width/height (and, for top/left edges, the x/y) motion values directly each
+  // frame, clamp to the app's min size, and commit once to state on release.
+  function startResize(e: React.PointerEvent, dir: ResizeDir) {
     e.stopPropagation();
     e.preventDefault();
     if (maximized) return;
     onFocus();
     resizingRef.current = true;
+    const x0 = x.get();
+    const y0 = y.get();
     resizeStart.current = { w: win.w, h: win.h, mx: e.clientX, my: e.clientY };
     const target = e.currentTarget as HTMLElement;
     target.setPointerCapture(e.pointerId);
 
     const onMoveResize = (ev: PointerEvent) => {
-      const dw = ev.clientX - resizeStart.current.mx;
-      const dh = ev.clientY - resizeStart.current.my;
-      width.set(Math.max(minSize.w, resizeStart.current.w + dw));
-      height.set(Math.max(minSize.h, resizeStart.current.h + dh));
+      const dx = ev.clientX - resizeStart.current.mx;
+      const dy = ev.clientY - resizeStart.current.my;
+      const { w: w0, h: h0 } = resizeStart.current;
+
+      if (dir.includes("e")) {
+        width.set(Math.max(minSize.w, w0 + dx));
+      } else if (dir.includes("w")) {
+        // left edge moves: shrink/grow from the left, holding the right edge.
+        const nw = Math.max(minSize.w, w0 - dx);
+        width.set(nw);
+        x.set(x0 + (w0 - nw));
+      }
+      if (dir.includes("s")) {
+        height.set(Math.max(minSize.h, h0 + dy));
+      } else if (dir.includes("n")) {
+        // top edge moves: hold the bottom edge.
+        const nh = Math.max(minSize.h, h0 - dy);
+        height.set(nh);
+        y.set(Math.max(MENU_BAR_H + 6, y0 + (h0 - nh)));
+      }
     };
     const onUp = (ev: PointerEvent) => {
       target.releasePointerCapture(ev.pointerId);
       window.removeEventListener("pointermove", onMoveResize);
       window.removeEventListener("pointerup", onUp);
       resizingRef.current = false;
-      // commit the final size to state — once, on release
-      onResize(Math.round(width.get()), Math.round(height.get()));
+      // commit the final geometry to state — once, on release
+      onResize(
+        Math.round(width.get()),
+        Math.round(height.get()),
+        Math.round(x.get()),
+        Math.round(y.get()),
+      );
     };
     window.addEventListener("pointermove", onMoveResize);
     window.addEventListener("pointerup", onUp);
@@ -280,13 +308,20 @@ export function Window({
         {children}
       </div>
 
-      {/* resize handle (bottom-right) */}
+      {/* resize handles — 4 edges + 4 corners, like real macOS */}
       {!maximized ? (
-        <div
-          onPointerDown={startResize}
-          aria-hidden
-          className="absolute bottom-0 right-0 z-20 size-4 cursor-nwse-resize"
-        />
+        <>
+          {/* edges (thin strips, inset so corners win at the ends) */}
+          <div onPointerDown={(e) => startResize(e, "n")} aria-hidden className="absolute inset-x-3 top-0 z-10 h-[5px] cursor-ns-resize" />
+          <div onPointerDown={(e) => startResize(e, "s")} aria-hidden className="absolute inset-x-3 bottom-0 z-10 h-[5px] cursor-ns-resize" />
+          <div onPointerDown={(e) => startResize(e, "w")} aria-hidden className="absolute inset-y-3 left-0 z-10 w-[5px] cursor-ew-resize" />
+          <div onPointerDown={(e) => startResize(e, "e")} aria-hidden className="absolute inset-y-3 right-0 z-10 w-[5px] cursor-ew-resize" />
+          {/* corners (sit above edges) */}
+          <div onPointerDown={(e) => startResize(e, "nw")} aria-hidden className="absolute left-0 top-0 z-20 size-3 cursor-nwse-resize" />
+          <div onPointerDown={(e) => startResize(e, "ne")} aria-hidden className="absolute right-0 top-0 z-20 size-3 cursor-nesw-resize" />
+          <div onPointerDown={(e) => startResize(e, "sw")} aria-hidden className="absolute bottom-0 left-0 z-20 size-3 cursor-nesw-resize" />
+          <div onPointerDown={(e) => startResize(e, "se")} aria-hidden className="absolute bottom-0 right-0 z-20 size-3 cursor-nwse-resize" />
+        </>
       ) : null}
     </motion.div>
   );

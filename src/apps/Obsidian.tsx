@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronDown,
   ChevronRight,
@@ -6,6 +7,7 @@ import {
   Folder,
   FolderOpen,
   PanelLeft,
+  Menu,
   Network,
   Hash,
   Link2,
@@ -18,6 +20,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "../lib/cn";
+import { useViewport } from "../lib/useViewport";
 import {
   DEFAULT_NOTE,
   VAULT_NAME,
@@ -43,10 +46,12 @@ interface ObsidianProps {
  * toggles the knowledge Graph View.
  */
 export function Obsidian({ requestedNote, onRequestConsumed }: ObsidianProps) {
+  const { isMobile } = useViewport();
   const [history, setHistory] = useState<string[]>([DEFAULT_NOTE]);
   const [cursor, setCursor] = useState(0);
   const [showGraph, setShowGraph] = useState(false);
   const [showExplorer, setShowExplorer] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false); // mobile file drawer
   const paneRef = useRef<HTMLDivElement>(null);
 
   const current = history[cursor];
@@ -71,6 +76,117 @@ export function Obsidian({ requestedNote, onRequestConsumed }: ObsidianProps) {
   useEffect(() => {
     paneRef.current?.scrollTo({ top: 0 });
   }, [current, showGraph]);
+
+  // ---- mobile: the Obsidian mobile app — full-width reading, file drawer ----
+  if (isMobile) {
+    return (
+      <div className="flex h-full flex-col bg-[#1e1e1e] text-[#dcddde]">
+        {/* top bar */}
+        <div className="flex h-12 shrink-0 items-center gap-1.5 border-b border-black/40 bg-[#1a1a1a] px-2.5">
+          <button
+            type="button"
+            aria-label="Files"
+            onClick={() => setDrawerOpen(true)}
+            className="grid size-9 place-items-center rounded-md text-[#b9bbbe] transition-colors hover:bg-white/5 active:scale-90"
+          >
+            <Menu className="size-[19px]" />
+          </button>
+          <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-[0.9rem] font-medium">
+            {showGraph ? (
+              <>
+                <Network className="size-4 shrink-0 text-[#a78bfa]" /> Graph view
+              </>
+            ) : (
+              <>
+                <FileText className="size-4 shrink-0 text-[#a78bfa]" />
+                <span className="truncate">{current}</span>
+              </>
+            )}
+          </span>
+          <button
+            type="button"
+            aria-label="Graph view"
+            aria-pressed={showGraph}
+            onClick={() => setShowGraph((g) => !g)}
+            className={cn(
+              "grid size-9 shrink-0 place-items-center rounded-md transition-colors active:scale-90",
+              showGraph
+                ? "bg-[#a78bfa26] text-[#c4b5fd]"
+                : "text-[#8b8d92] hover:bg-white/5 hover:text-[#dcddde]",
+            )}
+          >
+            <Network className="size-[19px]" />
+          </button>
+        </div>
+
+        {/* content */}
+        <div className="relative min-h-0 flex-1">
+          {showGraph ? (
+            <GraphView onOpen={openNote} active={current} />
+          ) : (
+            <div
+              ref={paneRef}
+              className="scroll-region h-full overflow-y-auto px-5 py-5"
+            >
+              {note ? (
+                <>
+                  <PropertiesBlock
+                    props={note.props}
+                    tags={note.tags}
+                    onOpenNote={openNote}
+                  />
+                  <Markdown
+                    source={note.body}
+                    variant="obsidian"
+                    onNavigateNote={openNote}
+                  />
+                </>
+              ) : (
+                <p className="text-sm text-[#72767d]">Note not found.</p>
+              )}
+            </div>
+          )}
+
+          {/* slide-in file drawer */}
+          <AnimatePresence>
+            {drawerOpen ? (
+              <>
+                <motion.div
+                  className="absolute inset-0 z-20 bg-black/55"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  onClick={() => setDrawerOpen(false)}
+                />
+                <motion.aside
+                  className="absolute inset-y-0 left-0 z-30 flex w-[80%] max-w-[300px] flex-col border-r border-black/40 bg-[#202225] shadow-2xl"
+                  initial={{ x: "-100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "-100%" }}
+                  transition={{ type: "spring", stiffness: 360, damping: 36 }}
+                >
+                  <div className="flex items-center gap-1.5 border-b border-black/30 px-3 py-3 text-sm font-semibold text-[#b9bbbe]">
+                    <Folder className="size-4 text-[#a78bfa]" />
+                    {VAULT_NAME}
+                  </div>
+                  <div className="scroll-region min-h-0 flex-1 overflow-y-auto py-1.5 text-[0.92rem]">
+                    <FileTree
+                      current={current}
+                      onOpen={(t) => {
+                        openNote(t);
+                        setDrawerOpen(false);
+                      }}
+                    />
+                  </div>
+                </motion.aside>
+              </>
+            ) : null}
+          </AnimatePresence>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full bg-[#1e1e1e] text-[#dcddde]">

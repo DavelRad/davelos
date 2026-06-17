@@ -258,7 +258,7 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
               onMinimize={() => wm.minimize(id)}
               onToggleMaximize={() => wm.toggleMaximize(id)}
               onMove={(x, y) => wm.move(id, x, y)}
-              onResize={(w, h) => wm.resize(id, w, h)}
+              onResize={(w, h, x, y) => wm.resize(id, w, h, x, y)}
             >
               {renderApp(id)}
             </Window>

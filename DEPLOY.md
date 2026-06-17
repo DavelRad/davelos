@@ -90,23 +90,38 @@ for a full CDN — not required for a portfolio's traffic.)
 
 ---
 
-## Optional: CI/CD (auto-deploy on push to main)
+## CI/CD (auto-deploy on push to main) — keyless via Workload Identity
 
-`.github/workflows/deploy.yml` redeploys on every push to `main`. It needs a
-deploy service account + two GitHub secrets:
+`.github/workflows/deploy.yml` redeploys on every push to `main`. Auth is
+**keyless** — no JSON key, no GitHub secrets. GitHub mints a short-lived OIDC
+token and GCP trusts it only for this repo. Set up once:
 
 ```bash
+PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+gcloud services enable iamcredentials.googleapis.com sts.googleapis.com
+
+# deploy service account + roles
 gcloud iam service-accounts create gh-deployer --display-name="GitHub deployer"
 SA="gh-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
 for ROLE in run.admin iam.serviceAccountUser cloudbuild.builds.editor \
             artifactregistry.writer storage.admin serviceusage.serviceUsageConsumer; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member="serviceAccount:$SA" --role="roles/$ROLE"
+    --member="serviceAccount:$SA" --role="roles/$ROLE" --condition=None
 done
-gcloud iam service-accounts keys create key.json --iam-account="$SA"
+
+# Workload Identity pool + provider, scoped to the GitHub owner
+gcloud iam workload-identity-pools create github --location=global --display-name="GitHub Actions"
+gcloud iam workload-identity-pools providers create-oidc github-provider \
+  --location=global --workload-identity-pool=github \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
+  --attribute-condition="assertion.repository_owner=='DavelRad'" \
+  --issuer-uri="https://token.actions.githubusercontent.com"
+
+# let ONLY this repo impersonate the SA
+gcloud iam service-accounts add-iam-policy-binding "$SA" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUM}/locations/global/workloadIdentityPools/github/attribute.repository/DavelRad/davelos"
 ```
 
-Then in **GitHub → repo → Settings → Secrets and variables → Actions** add
-`GCP_PROJECT_ID` = `davel-portfolio` and `GCP_SA_KEY` = the contents of
-`key.json`, then **`rm key.json`**. For a hardened setup, replace the JSON key
-with **Workload Identity Federation**.
+The provider name + SA email live **in the workflow** (they're not secrets). The
+workflow needs `permissions: id-token: write`. That's it — push to `main` deploys.

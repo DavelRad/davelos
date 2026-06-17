@@ -3,23 +3,30 @@
 # Cloud Build runs the multi-stage root Dockerfile (vite build -> python server),
 # so no Node/Python setup is needed in the runner.
 #
-# Requires two GitHub repo secrets (Settings → Secrets and variables → Actions):
-#   GCP_PROJECT_ID  — davel-portfolio
-#   GCP_SA_KEY      — JSON key for a deploy service account with roles:
-#                     run.admin, iam.serviceAccountUser, cloudbuild.builds.editor,
-#                     artifactregistry.writer, storage.admin,
-#                     serviceusage.serviceUsageConsumer
+# Auth is KEYLESS via Workload Identity Federation (OIDC) — no long-lived JSON
+# key in GitHub secrets. GitHub mints a short-lived OIDC token; GCP trusts it
+# only for this repo (the provider is scoped to repository_owner == DavelRad and
+# the service account is impersonable only by attribute.repository DavelRad/davelos).
+# The provider name + service-account email below are NOT secrets.
 #
-# The ANTHROPIC_API_KEY secret binding is configured on the service out-of-band
-# (see DEPLOY.md); `gcloud run deploy` preserves it across deploys, so it is not
-# repeated here. (Workload Identity Federation is the hardened alternative to a
-# JSON key — see DEPLOY.md.)
+# Infra (set up once via gcloud; see DEPLOY.md):
+#   - SA  gh-deployer@davel-portfolio.iam.gserviceaccount.com  (roles: run.admin,
+#         iam.serviceAccountUser, cloudbuild.builds.editor, artifactregistry.writer,
+#         storage.admin, serviceusage.serviceUsageConsumer)
+#   - WIF pool `github` + provider `github-provider`
+# The ANTHROPIC_API_KEY / Spotify secrets are bound to the service out-of-band;
+# `gcloud run deploy` preserves them across deploys.
 name: deploy
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+# required for the OIDC token exchange
+permissions:
+  contents: read
+  id-token: write
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -34,17 +41,17 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          project_id: davel-portfolio
+          workload_identity_provider: projects/630783796094/locations/global/workloadIdentityPools/github/providers/github-provider
+          service_account: gh-deployer@davel-portfolio.iam.gserviceaccount.com
 
       - uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy davelos \
             --source . \
-            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --project davel-portfolio \
             --region us-central1 \
             --allow-unauthenticated \
             --max-instances 1 \
