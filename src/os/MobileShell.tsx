@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocalClock } from "../lib/useLocalClock";
 import { useDelightMotion, setReduceDelight } from "../lib/useDelightMotion";
@@ -64,6 +64,41 @@ export function MobileShell({
   );
 
   const goHome = useCallback(() => setActive(null), []);
+
+  // one-time "Start here" nudge → Obsidian, the way iOS surfaces a notification
+  // shortly after you land on the home screen. Shows once per visit; tap opens
+  // the vault, swipe up dismisses, and it auto-hides after a few seconds.
+  const [showBanner, setShowBanner] = useState(false);
+  const bannerDone = useRef(false);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (!bannerDone.current && activeRef.current === null) setShowBanner(true);
+    }, 1100);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (!showBanner) return;
+    const t = window.setTimeout(() => {
+      setShowBanner(false);
+      bannerDone.current = true;
+    }, 6500);
+    return () => window.clearTimeout(t);
+  }, [showBanner]);
+
+  const openFromBanner = useCallback(() => {
+    bannerDone.current = true;
+    setShowBanner(false);
+    launch("obsidian");
+  }, [launch]);
+
+  const dismissBanner = useCallback(() => {
+    bannerDone.current = true;
+    setShowBanner(false);
+  }, []);
 
   // bridge the Claude Code terminal uses to drive the phone.
   const bridge = useMemo<OsBridge>(
@@ -136,6 +171,17 @@ export function MobileShell({
 
         {/* STATUS BAR — always on top */}
         <StatusBar />
+
+        {/* "Start here" notification → Obsidian (home screen, first visit) */}
+        <AnimatePresence>
+          {active === null && showBanner ? (
+            <StartHereBanner
+              reduced={reduced}
+              onOpen={openFromBanner}
+              onDismiss={dismissBanner}
+            />
+          ) : null}
+        </AnimatePresence>
 
         {/* HOME INDICATOR — swipe/tap to go home (only while an app is open) */}
         {active ? <HomeIndicator onHome={goHome} /> : null}
@@ -217,6 +263,64 @@ function HomeIcon({
         </span>
       ) : null}
     </button>
+  );
+}
+
+/* ----------------------------- start-here banner ------------------------- */
+
+function StartHereBanner({
+  reduced,
+  onOpen,
+  onDismiss,
+}: {
+  reduced: boolean;
+  onOpen: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <motion.div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      aria-label="Start here — open Obsidian"
+      className="liquid-glass absolute left-3 right-3 z-[70] flex cursor-pointer items-center gap-3 rounded-[20px] px-3.5 py-3 text-left text-ink"
+      style={{ top: STATUS_H + 6 }}
+      initial={reduced ? { opacity: 0 } : { y: -140, opacity: 0 }}
+      animate={reduced ? { opacity: 1 } : { y: 0, opacity: 1 }}
+      exit={reduced ? { opacity: 0 } : { y: -140, opacity: 0 }}
+      transition={
+        reduced ? { duration: 0.15 } : { type: "spring", stiffness: 320, damping: 30 }
+      }
+      drag={reduced ? false : "y"}
+      dragConstraints={{ top: -200, bottom: 0 }}
+      dragElastic={{ top: 0.4, bottom: 0 }}
+      dragMomentum={false}
+      dragSnapToOrigin
+      onDragEnd={(_, info) => {
+        if (info.offset.y < -28) onDismiss();
+      }}
+    >
+      <span
+        className="block size-9 shrink-0 overflow-hidden rounded-[9px]"
+        style={{ filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.35))" }}
+      >
+        <DockAppIcon id="obsidian" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="mb-0.5 flex items-center justify-between">
+          <span className="text-[0.6rem] font-semibold uppercase tracking-wide text-ink-muted">
+            Obsidian
+          </span>
+          <span className="text-[0.6rem] text-ink-faint">now</span>
+        </span>
+        <span className="block text-[0.92rem] font-semibold leading-tight text-ink">
+          Start here 👋
+        </span>
+        <span className="mt-0.5 block text-[0.8rem] leading-snug text-ink-muted">
+          Tap to open my story — who I am &amp; what I'm shipping.
+        </span>
+      </span>
+    </motion.div>
   );
 }
 
