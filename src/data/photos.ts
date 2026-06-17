@@ -51,7 +51,6 @@ export const photoSets: Record<string, string[]> = {
     "/photos/life/IMG_0237.jpg",
     "/photos/life/IMG_0379-1.jpg",
     "/photos/life/IMG_0402.jpg",
-    "/photos/life/IMG_0456.jpg",
     "/photos/life/IMG_0603.jpg",
     "/photos/life/IMG_0651.jpg",
     "/photos/life/IMG_3036.jpg",

@@ -1,5 +1,7 @@
 import { qa, fallbackAnswer, profile } from "../data/profile";
 import { repoFiles } from "../data/repo";
+import type { AppId } from "../os/types";
+import type { OsBridge } from "../os/osBridge";
 
 /**
  * Terminal engine for the Claude Code app.
@@ -136,9 +138,9 @@ export function runCommand(raw: string): CommandResult {
 
 export const SUGGESTED = [
   "What is Nogic?",
-  "What's your tech stack?",
   "Why should we hire you?",
-  "What are you building?",
+  "Open my photos",
+  "Switch to dark mode",
 ];
 
 /* --------------------------- live backend (SSE) --------------------------- */
@@ -228,3 +230,240 @@ export async function askBackend(
   // If real text streamed, it's a success regardless of trailing events.
   return streamed ? { status: "ok" } : outcome;
 }
+
+/* ----------------------------- agent actions ----------------------------- *
+ * Beyond *answering*, this terminal can actually DRIVE davelOS — the same
+ * readable things a visitor could do by hand (open an app, flip the theme,
+ * reduce motion, pop Spotlight). `parseAction` is a deterministic intent parser
+ * that runs BEFORE the backend: if the input is a clear command it returns an
+ * AgentAction (with realistic tool-call flavor); otherwise null and we fall
+ * through to the normal grounded Q&A. Nothing here mutates the site.
+ * ------------------------------------------------------------------------- */
+
+export type OsIntent =
+  | { type: "openApp"; app: AppId }
+  | { type: "setTheme"; theme: "dark" | "light" }
+  | { type: "toggleTheme" }
+  | { type: "reduceMotion"; on: boolean }
+  | { type: "openSpotlight" };
+
+export interface AgentAction {
+  intent: OsIntent;
+  /** realistic Claude Code tool-call line, e.g. `Bash(open -a "Obsidian")`. */
+  tool: string;
+  /** the tool's result line, shown under it. */
+  result: string;
+  /** the confirmation Claude "says" (streamed into an answer line). */
+  say: string;
+}
+
+/** Apply a parsed intent to the live OS via the shell-provided bridge. */
+export function applyIntent(intent: OsIntent, os: OsBridge): void {
+  switch (intent.type) {
+    case "openApp":
+      os.openApp(intent.app);
+      break;
+    case "setTheme":
+      os.setTheme(intent.theme);
+      break;
+    case "toggleTheme":
+      os.toggleTheme();
+      break;
+    case "reduceMotion":
+      os.setReduceMotion(intent.on);
+      break;
+    case "openSpotlight":
+      os.openSpotlight();
+      break;
+  }
+}
+
+/** Verbs that signal "open this app for me". */
+const OPEN_VERB =
+  /\b(open|launch|show|pull up|bring up|fire up|boot up|start up|go to|take me to|let me see|display|view|gimme|give me|run|jump to|play)\b/;
+
+interface AppTarget {
+  app: AppId;
+  label: string;
+  /** the .app it "launches" (for the Bash flavor line). */
+  bin: string;
+  aliases: RegExp;
+  say: string;
+}
+
+const APP_TARGETS: AppTarget[] = [
+  {
+    app: "obsidian",
+    label: "Obsidian",
+    bin: "Obsidian",
+    aliases: /\b(obsidian|the vault|my vault|notes? vault|the wiki|the story)\b/,
+    say: "Opening my Obsidian vault — the full story: who I am, what I'm shipping, and every project, all interlinked.",
+  },
+  {
+    app: "photos",
+    label: "Photos",
+    bin: "Photos",
+    aliases: /\b(photos?|pictures?|pics|gallery|albums?)\b/,
+    say: "Pulling up Photos. Hackathons, demo days, and the occasional touched grass. 📸",
+  },
+  {
+    app: "spotify",
+    label: "Spotify",
+    bin: "Spotify",
+    aliases: /\b(spotify|music|a song|some tunes|something to listen)\b/,
+    say: "Opening Spotify — here's what's actually on repeat. Hit play. 🎧",
+  },
+  {
+    app: "startup",
+    label: "Startup",
+    bin: "Startup",
+    aliases: /\b(startup|founder journey|founder|yc|y combinator|paxel)\b/,
+    say: "Opening the Startup app — the founder journey, Nogic, and my real YC report.",
+  },
+  {
+    app: "mail",
+    label: "Mail",
+    bin: "Mail",
+    aliases: /\b(mail|email|contact|get in touch|reach out)\b/,
+    say: "Opening Mail — easiest way to reach me. Say hi. 👋",
+  },
+  {
+    app: "preview",
+    label: "Preview",
+    bin: "Preview",
+    aliases: /\b(resume|résumé|cv)\b/,
+    say: "Opening my resume in Preview.",
+  },
+  {
+    app: "github",
+    label: "GitHub",
+    bin: "open",
+    aliases: /\b(github|the repo|source code|the code|his code|your code)\b/,
+    say: "Opening my GitHub in a new tab — go poke at the code.",
+  },
+  {
+    app: "settings",
+    label: "Settings",
+    bin: "System Settings",
+    aliases: /\b(settings|preferences|system settings)\b/,
+    say: "Opening System Settings.",
+  },
+  {
+    app: "notes",
+    label: "Notes",
+    bin: "Stickies",
+    aliases: /\b(stickies|sticky note|notes app)\b/,
+    say: "Opening Notes.",
+  },
+  {
+    app: "editor",
+    label: "VS Code",
+    bin: "Visual Studio Code",
+    aliases: /\b(vs ?code|the editor|about\.ts)\b/,
+    say: "Opening the editor.",
+  },
+];
+
+const THEME_DARK =
+  /\b(dark mode|dark theme|night mode|go dark|lights? off|turn off the lights?)\b/;
+const THEME_LIGHT =
+  /\b(light mode|light theme|day mode|go light|lights? on|turn on the lights?|bright mode)\b/;
+const THEME_TOGGLE =
+  /\b(toggle (?:the )?theme|switch (?:the )?theme|change (?:the )?theme|flip (?:the )?theme|switch appearance|toggle appearance|change appearance)\b/;
+const MOTION_REDUCE =
+  /\b(reduce (?:the )?motion|less motion|calm (?:it|things) down|stop the animations?|disable (?:the )?animations?|turn off (?:the )?animations?|less movement)\b/;
+const MOTION_FULL =
+  /\b(enable (?:the )?animations?|turn on (?:the )?animations?|more motion|full motion|restore motion|bring back (?:the )?motion)\b/;
+const SPOTLIGHT =
+  /\b(spotlight|command palette|open search|cmd\s*\+?\s*k|⌘\s*k)\b/;
+
+/** Parse a natural-language command into a runnable OS action, or null. */
+export function parseAction(raw: string): AgentAction | null {
+  const q = raw.toLowerCase();
+
+  // appearance
+  if (THEME_TOGGLE.test(q))
+    return {
+      intent: { type: "toggleTheme" },
+      tool: "Settings(appearance: toggle)",
+      result: "appearance switched",
+      say: "Flipped the appearance for you.",
+    };
+  if (THEME_DARK.test(q))
+    return {
+      intent: { type: "setTheme", theme: "dark" },
+      tool: "Settings(appearance: dark)",
+      result: "theme = dark",
+      say: "Dark mode on. Easier on the eyes. 🌙",
+    };
+  if (THEME_LIGHT.test(q))
+    return {
+      intent: { type: "setTheme", theme: "light" },
+      tool: "Settings(appearance: light)",
+      result: "theme = light",
+      say: "Light mode on. ☀️",
+    };
+
+  // motion
+  if (MOTION_REDUCE.test(q))
+    return {
+      intent: { type: "reduceMotion", on: true },
+      tool: "Settings(motion: reduce)",
+      result: "reduce-motion = on",
+      say: "Calmed the motion down — dock magnification and the bounces are dialed back.",
+    };
+  if (MOTION_FULL.test(q))
+    return {
+      intent: { type: "reduceMotion", on: false },
+      tool: "Settings(motion: full)",
+      result: "reduce-motion = off",
+      say: "Full motion restored. Let it bounce.",
+    };
+
+  // spotlight
+  if (SPOTLIGHT.test(q))
+    return {
+      intent: { type: "openSpotlight" },
+      tool: "Hotkey(⌘K)",
+      result: "Spotlight opened",
+      say: "Spotlight's up — start typing to jump anywhere. (⌘K)",
+    };
+
+  // open an app
+  if (OPEN_VERB.test(q)) {
+    for (const t of APP_TARGETS) {
+      if (t.aliases.test(q)) {
+        const tool =
+          t.app === "github"
+            ? "Bash(open https://github.com/DavelRad)"
+            : `Bash(open -a "${t.bin}")`;
+        const result =
+          t.app === "github"
+            ? "opening github.com/DavelRad"
+            : `${t.label} launched`;
+        return { intent: { type: "openApp", app: t.app }, tool, result, say: t.say };
+      }
+    }
+  }
+
+  return null;
+}
+
+/** "what can you do" style meta-question → a capabilities listing. */
+const CAPABILITY_RE =
+  /\b(what can you (?:do|control|open|run)|what (?:can|do) you actually do|can you (?:open|control|do) (?:apps|things|stuff)|what are you capable|your capabilities|what commands|how do you work|what else can you)\b/;
+
+export function isCapabilityQuery(raw: string): boolean {
+  return CAPABILITY_RE.test(raw.toLowerCase());
+}
+
+export const CAPABILITIES = [
+  "I'm wired into davelOS — so I can actually drive it, not just talk:",
+  "",
+  '  open apps     "open Obsidian", "show me your photos", "play Spotify"',
+  '  appearance    "dark mode", "light mode", "toggle the theme"',
+  '  motion        "reduce motion", "turn the animations back on"',
+  '  spotlight     "open Spotlight"  (desktop)',
+  "",
+  "  …or just ask anything about Davel — I answer from a grounded knowledge base.",
+];

@@ -5,11 +5,17 @@ import {
   useState,
 } from "react";
 import { useDelightMotion } from "../lib/useDelightMotion";
+import { useOsBridge } from "../os/osBridge";
 import {
+  applyIntent,
   askBackend,
+  CAPABILITIES,
+  isCapabilityQuery,
+  parseAction,
   route,
   runCommand,
   SUGGESTED,
+  type AgentAction,
   type ChatMessage,
   type ToolCall,
 } from "./terminalEngine";
@@ -41,6 +47,7 @@ export function ClaudeTerminal({
   // Decoupled from OS reduce-motion: the streamed "agentic" reply is a
   // signature showcase, so it animates unless the user opts out in Settings.
   const reduced = !useDelightMotion();
+  const os = useOsBridge();
   const [lines, setLines] = useState<Line[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -148,6 +155,39 @@ export function ClaudeTerminal({
     [push, reduced, streamInto],
   );
 
+  /** Run an OS action the way real Claude Code would: emit a tool-call line,
+   * actually perform it via the shell bridge, then confirm in prose. */
+  const runAction = useCallback(
+    async (action: AgentAction) => {
+      // Spotlight only exists on the desktop shell — reframe on mobile.
+      const act =
+        action.intent.type === "openSpotlight" && !os.spotlightAvailable
+          ? {
+              ...action,
+              result: "n/a (mobile)",
+              say: "Spotlight's a desktop thing — on here, just tap an app to open it.",
+            }
+          : action;
+
+      push({ kind: "tool", text: `● ${act.tool}` });
+      await wait(reduced ? 0 : 240 + Math.random() * 200);
+      push({ kind: "tool", text: `  ⎿  ${act.result}` });
+      await wait(reduced ? 0 : 150);
+
+      const id = nextId();
+      setLines((l) => [...l, { id, kind: "answer", text: "" }]);
+      await streamInto(id, act.say);
+
+      // perform LAST, so the confirmation is fully visible even when the action
+      // navigates away (e.g. opening an app on mobile switches the view).
+      await wait(reduced ? 0 : 120);
+      if (os.spotlightAvailable || act.intent.type !== "openSpotlight") {
+        applyIntent(act.intent, os);
+      }
+    },
+    [os, push, reduced, streamInto],
+  );
+
   const submit = useCallback(
     async (raw: string) => {
       const value = raw.trim();
@@ -164,12 +204,22 @@ export function ClaudeTerminal({
       } else if (result.lines) {
         for (const text of result.lines) push({ kind: "output", text });
       } else if (result.ask) {
-        await runQuestion(result.ask);
+        // 1) a real OS action ("open Spotify", "dark mode")? do it.
+        // 2) a "what can you do" meta-question? list capabilities.
+        // 3) otherwise a grounded question → the knowledge base / backend.
+        const action = parseAction(result.ask);
+        if (action) {
+          await runAction(action);
+        } else if (isCapabilityQuery(result.ask)) {
+          for (const text of CAPABILITIES) push({ kind: "output", text });
+        } else {
+          await runQuestion(result.ask);
+        }
       }
       setBusy(false);
       requestAnimationFrame(() => inputRef.current?.focus());
     },
-    [busy, push, runQuestion],
+    [busy, push, runAction, runQuestion],
   );
 
   // run external (Spotlight) question

@@ -93,8 +93,6 @@ export const captions: Record<string, string> = {
     "Kayaking the bay. Touched water instead of grass for once.",
   "/photos/life/IMG_0402.jpg":
     "Co-working with the goodest boy. He did not review my PRs.",
-  "/photos/life/IMG_0456.jpg":
-    "Sun, shades, something green in the glass. Touching grass, premium edition.",
   "/photos/life/IMG_0603.jpg": "Matcha count: 5. Regrets: 0. It was raining anyway.",
   "/photos/life/IMG_0651.jpg": "Wine-country detour. Roses, cypress, and zero laptops.",
   "/photos/life/IMG_3036.jpg": "Laguna sunset. The only orange that beats the YC logo.",

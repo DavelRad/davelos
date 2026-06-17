@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useGitHub } from "../lib/useGitHub";
+import { setReduceDelight } from "../lib/useDelightMotion";
 import type { Theme } from "../lib/useTheme";
 import { useViewport } from "../lib/useViewport";
 import { APPS, LINK_APPS } from "./apps";
+import { OsBridgeContext, type OsBridge } from "./osBridge";
 import type { AppId } from "./types";
 import { useWindowManager } from "./useWindowManager";
 import { Wallpaper } from "./Wallpaper";
@@ -96,6 +98,20 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
   );
 
   const openResume = useCallback(() => wm.open("preview"), [wm]);
+
+  // The OS bridge the Claude Code terminal uses to actually drive the desktop
+  // (open apps, flip the theme, reduce motion, pop Spotlight).
+  const desktopBridge = useMemo<OsBridge>(
+    () => ({
+      openApp: activate,
+      setTheme,
+      toggleTheme,
+      setReduceMotion: setReduceDelight,
+      openSpotlight: () => setSpotlightOpen(true),
+      spotlightAvailable: true,
+    }),
+    [activate, setTheme, toggleTheme],
+  );
 
   const onMenuAction = useCallback(
     (action: MenuAction) => {
@@ -202,6 +218,7 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
       <MobileShell
         theme={theme}
         onToggleTheme={toggleTheme}
+        onSetTheme={setTheme}
         renderApp={renderApp}
         onOpenGitHub={openGitHub}
       />
@@ -210,6 +227,7 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
 
   // ---- windowed desktop ----
   return (
+    <OsBridgeContext.Provider value={desktopBridge}>
     <div className="absolute inset-0 overflow-hidden">
       <Wallpaper />
       <DesktopIcons onOpenResume={openResume} onOpenEditor={() => wm.open("editor")} />
@@ -266,5 +284,6 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
         onOpenGitHub={openGitHub}
       />
     </div>
+    </OsBridgeContext.Provider>
   );
 }
