@@ -68,6 +68,52 @@ should now show `"ask_enabled":true`.
 > `SPOTIFY_REFRESH_TOKEN` the same way (`node scripts/spotify-auth.mjs` mints the
 > refresh token). Until then the Spotify app shows tasteful mock data.
 
+## 1b. Telemetry (chatbot Q&A + usage) — first-party, no extra service
+
+The bot's questions/answers and anonymous frontend events (`app_open`, etc.) are
+emitted as JSON lines to stdout, which Cloud Run ingests into **Cloud Logging**
+automatically. No database, no third-party analytics. It works the moment you
+deploy — these env vars only tune it:
+
+- `LOG_SALT` — secret used to HMAC-hash client IPs so repeat-visitor counting
+  works **without storing raw IPs**. Set a stable secret in prod:
+
+  ```bash
+  printf "%s" "$(openssl rand -hex 16)" | gcloud secrets create log-salt --data-file=-
+  gcloud secrets add-iam-policy-binding log-salt \
+    --member="serviceAccount:630783796094-compute@developer.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor"
+  gcloud run services update davelos --region us-central1 \
+    --update-secrets LOG_SALT=log-salt:latest
+  ```
+
+- `LOG_ANSWERS` — `1` (default) logs the assistant's answer (truncated); set `0`
+  to log questions + outcome + tokens only.
+
+**See what people ask** in Logs Explorer:
+
+```bash
+gcloud logging read \
+  'resource.type=cloud_run_revision AND jsonPayload.event="ask"' \
+  --project davel-portfolio --limit 50 \
+  --format='value(jsonPayload.question, jsonPayload.outcome)'
+```
+
+**Optional — BigQuery sink for SQL analysis** (top questions, fallback rate,
+token cost, intent funnel, p95 latency):
+
+```bash
+bq --location=US mk -d davel-portfolio:davelos_logs
+gcloud logging sinks create davelos-telemetry \
+  bigquery.googleapis.com/projects/davel-portfolio/datasets/davelos_logs \
+  --log-filter='resource.type=cloud_run_revision AND (jsonPayload.event="ask" OR jsonPayload.event="ux")'
+# grant the sink's writer identity BigQuery Data Editor (the create cmd prints it):
+#   bq add-iam-policy-binding ... roles/bigquery.dataEditor
+```
+
+Then, e.g. `SELECT jsonPayload.question, COUNT(*) c FROM davelos_logs.run_googleapis_com_stdout
+WHERE jsonPayload.event='ask' GROUP BY 1 ORDER BY c DESC LIMIT 20`.
+
 ## 2. Point davelradindra.com at it
 
 Cloud Run custom domains need the domain **verified** once, then DNS records:

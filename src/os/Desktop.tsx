@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useGitHub } from "../lib/useGitHub";
 import { setReduceDelight } from "../lib/useDelightMotion";
+import { track } from "../lib/analytics";
 import type { Theme } from "../lib/useTheme";
 import { useViewport } from "../lib/useViewport";
 import { APPS, LINK_APPS } from "./apps";
@@ -48,21 +49,39 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
 
   // Open GitHub = an honest outbound link to the real profile (no window).
   const openGitHub = useCallback(() => {
+    track("github_open");
     window.open(LINK_APPS.github, "_blank", "noopener,noreferrer");
   }, []);
 
   /** Dock/Spotlight activation: link-only apps run a side effect; the rest
-   * open/focus a window. */
+   * open/focus a window. `source` records where the open came from. */
   const activate = useCallback(
-    (id: AppId) => {
+    (id: AppId, source = "dock") => {
       if (id in LINK_APPS) {
         if (id === "github") openGitHub();
         return;
       }
+      // count a real open (not a focus/un-minimize of an already-running app)
+      if (!wm.isRunning(id)) track("app_open", { app: id, source });
       wm.activate(id);
     },
     [openGitHub, wm],
   );
+
+  // one usage "session_start" per tab — captures shell + theme so we can see
+  // desktop vs mobile traffic. Fires once, regardless of which shell renders.
+  const sessionLogged = useRef(false);
+  useEffect(() => {
+    if (sessionLogged.current) return;
+    sessionLogged.current = true;
+    track("session_start", {
+      shell: vp.isMobile ? "mobile" : "desktop",
+      theme,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      ref: document.referrer || "direct",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // default boot layout: a lived-in desktop. Background apps open first (lower
   // z, offset, partially visible), then Obsidian (left) + Claude Code (right)
@@ -83,6 +102,8 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
 
   const openNoteInObsidian = useCallback(
     (title: string) => {
+      if (!wm.isRunning("obsidian"))
+        track("app_open", { app: "obsidian", source: "note" });
       wm.open("obsidian");
       setRequestedNote(title);
     },
@@ -97,13 +118,16 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
     [wm],
   );
 
-  const openResume = useCallback(() => wm.open("preview"), [wm]);
+  const openResume = useCallback(() => {
+    track("resume_view");
+    wm.open("preview");
+  }, [wm]);
 
   // The OS bridge the Claude Code terminal uses to actually drive the desktop
   // (open apps, flip the theme, reduce motion, pop Spotlight).
   const desktopBridge = useMemo<OsBridge>(
     () => ({
-      openApp: activate,
+      openApp: (id) => activate(id, "terminal_agent"),
       setTheme,
       toggleTheme,
       setReduceMotion: setReduceDelight,
@@ -171,6 +195,11 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [toggleTheme]);
+
+  // log each Spotlight open (hotkey, menu bar, or terminal agent — one signal).
+  useEffect(() => {
+    if (spotlightOpen) track("spotlight_open");
+  }, [spotlightOpen]);
 
   const renderApp = useCallback(
     (id: AppId) => {
@@ -276,7 +305,7 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
       <Spotlight
         open={spotlightOpen}
         onClose={() => setSpotlightOpen(false)}
-        onOpenApp={activate}
+        onOpenApp={(id) => activate(id, "spotlight")}
         onOpenNote={openNoteInObsidian}
         onAsk={askInTerminal}
         onToggleTheme={toggleTheme}

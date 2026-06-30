@@ -10,6 +10,7 @@ import {
   Mail as MailIcon,
 } from "lucide-react";
 import { contactLinks } from "../data/profile";
+import { track } from "../lib/analytics";
 
 const ICONS: Record<string, typeof MailIcon> = {
   Email: MailIcon,
@@ -40,6 +41,7 @@ export function Mail() {
   )}&body=${encodeURIComponent(body)}`;
 
   async function copyEmail() {
+    track("copy_email");
     try {
       await navigator.clipboard.writeText(email);
     } catch {
@@ -109,6 +111,9 @@ export function Mail() {
                   href={link.href}
                   target={link.href.startsWith("mailto") ? undefined : "_blank"}
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    track("contact_click", { label: link.label, source: "mail" })
+                  }
                   className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-ink-muted transition-colors hover:border-os-accent/50 hover:text-ink active:scale-[0.98]"
                 >
                   <Icon className="size-4 shrink-0" />
@@ -124,6 +129,7 @@ export function Mail() {
       <div className="flex items-center justify-end border-t border-line px-4 py-3">
         <a
           href={mailto}
+          onClick={() => track("contact_click", { label: "send", source: "mail" })}
           className="inline-flex items-center gap-2 rounded-full bg-os-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
         >
           <Send className="size-4" />

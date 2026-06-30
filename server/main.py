@@ -20,15 +20,23 @@ from __future__ import annotations
 
 import json
 import os
+import time
+import uuid
 from typing import Any, AsyncIterator
 
 import httpx
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    PlainTextResponse,
+    StreamingResponse,
+)
 
 from knowledge import system_prompt
 from ratelimit import Limits, RateLimiter
+from telemetry import A_CAP, LOG_ANSWERS, Q_CAP, clip, emit, ip_hash
 
 # ----------------------------- configuration ------------------------------ #
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5")
@@ -45,6 +53,32 @@ limiter = RateLimiter(
         global_per_day=int(os.environ.get("RL_GLOBAL_DAY", "1000")),
     )
 )
+
+# Usage events (/api/event) are higher-frequency and cheap, so they get their own
+# looser limiter. Its only job is to stop someone from flooding the logs (and any
+# downstream BigQuery sink) — over the cap, events are dropped silently.
+event_limiter = RateLimiter(
+    Limits(
+        per_ip_window_seconds=10,
+        per_ip_in_window=40,
+        per_ip_per_day=3000,
+        global_per_day=100_000,
+    )
+)
+
+# Only these anonymous frontend events are accepted; anything else is ignored.
+ALLOWED_EVENTS = {
+    "session_start",
+    "app_open",
+    "resume_view",
+    "spotlight_open",
+    "github_open",
+    "contact_click",
+    "copy_email",
+    "external_link",
+}
+MAX_EVENTS_PER_REQ = 20
+MAX_PROPS_CHARS = 1_000
 
 app = FastAPI(title="Ask Davel", version="1.0.0")
 app.add_middleware(
@@ -95,12 +129,40 @@ def sanitize(raw_messages: Any) -> list[dict[str, str]] | None:
 
 
 # -------------------------------- /ask ------------------------------------ #
-async def stream_answer(messages: list[dict[str, str]]) -> AsyncIterator[str]:
+async def stream_answer(
+    messages: list[dict[str, str]], meta: dict[str, Any]
+) -> AsyncIterator[str]:
+    t0 = meta["t0"]
+    answer_parts: list[str] = []
+    ttfb_ms: int | None = None
+    logged = False
+
+    def _log(outcome: str, **extra: Any) -> None:
+        """Emit exactly one structured log line for this /api/ask request."""
+        nonlocal logged
+        if logged:
+            return
+        logged = True
+        emit({
+            "event": "ask",
+            "req_id": meta["req_id"],
+            "outcome": outcome,
+            "model": MODEL,
+            "question": clip(meta["question"], Q_CAP),
+            "n_prior": meta["n_prior"],
+            "ip_hash": meta["ip_hash"],
+            "ua": meta["ua"],
+            "sid": meta["sid"],
+            "latency_ms": round((time.perf_counter() - t0) * 1000),
+            **extra,
+        })
+
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         # No key yet -> tell the client to use its built-in offline answer.
         yield sse({"type": "offline"})
         yield sse({"type": "done"})
+        _log("offline")
         return
 
     try:
@@ -108,10 +170,12 @@ async def stream_answer(messages: list[dict[str, str]]) -> AsyncIterator[str]:
     except ImportError:
         yield sse({"type": "error", "message": "sdk_missing"})
         yield sse({"type": "done"})
+        _log("error", error="sdk_missing")
         return
 
     client = AsyncAnthropic(api_key=api_key)
     try:
+        usage: dict[str, Any] = {}
         async with client.messages.stream(
             model=MODEL,
             max_tokens=MAX_TOKENS,
@@ -126,28 +190,68 @@ async def stream_answer(messages: list[dict[str, str]]) -> AsyncIterator[str]:
         ) as stream:
             async for text in stream.text_stream:
                 if text:
+                    if ttfb_ms is None:
+                        ttfb_ms = round((time.perf_counter() - t0) * 1000)
+                    answer_parts.append(text)
                     yield sse({"type": "delta", "text": text})
+            # Still inside the stream context: the final message + token usage
+            # (incl. prompt-cache hits) are available here.
+            try:
+                u = (await stream.get_final_message()).usage
+                usage = {
+                    "tokens_in": getattr(u, "input_tokens", None),
+                    "tokens_out": getattr(u, "output_tokens", None),
+                    "cache_read": getattr(u, "cache_read_input_tokens", None),
+                    "cache_creation": getattr(u, "cache_creation_input_tokens", None),
+                }
+            except Exception:
+                usage = {}
         yield sse({"type": "done"})
+        answer = "".join(answer_parts)
+        extra: dict[str, Any] = {"ttfb_ms": ttfb_ms, "answer_chars": len(answer), **usage}
+        if LOG_ANSWERS:
+            extra["answer"] = clip(answer, A_CAP)
+        _log("ok", **extra)
     except Exception as err:  # degrade gracefully; client falls back to canned
         yield sse({"type": "error", "message": type(err).__name__})
         yield sse({"type": "done"})
+        _log("error", error=type(err).__name__, ttfb_ms=ttfb_ms)
     finally:
+        # If the client disconnected mid-stream (CancelledError), nothing above
+        # logged — record a partial so the request still shows up.
+        _log("client_closed", ttfb_ms=ttfb_ms,
+             answer_chars=sum(len(p) for p in answer_parts))
         await client.close()
 
 
 @app.post("/api/ask")
 async def ask(req: Request) -> Any:
+    t0 = time.perf_counter()
+    ip_h = ip_hash(client_ip(req))
+    ua = req.headers.get("user-agent", "")[:200]
+    req_id = uuid.uuid4().hex[:8]
+
     try:
         body = await req.json()
     except Exception:
+        emit({"event": "ask", "req_id": req_id, "outcome": "bad_json",
+              "ip_hash": ip_h, "ua": ua})
         return JSONResponse({"error": "bad_json"}, status_code=400)
 
     messages = sanitize(body.get("messages"))
     if messages is None:
+        emit({"event": "ask", "req_id": req_id, "outcome": "bad_request",
+              "ip_hash": ip_h, "ua": ua})
         return JSONResponse({"error": "bad_request"}, status_code=400)
+
+    question = messages[-1]["content"]
+    sid = str(body.get("sid", ""))[:40] if isinstance(body, dict) else ""
 
     decision = limiter.check(client_ip(req))
     if not decision.allowed:
+        emit({"event": "ask", "req_id": req_id, "outcome": "rate_limited",
+              "rl_reason": decision.reason, "question": clip(question, Q_CAP),
+              "n_prior": len(messages) - 1, "ip_hash": ip_h, "ua": ua, "sid": sid})
         return JSONResponse(
             {"error": "rate_limited", "reason": decision.reason,
              "retry_after": decision.retry_after},
@@ -155,14 +259,82 @@ async def ask(req: Request) -> Any:
             headers={"Retry-After": str(decision.retry_after)},
         )
 
+    meta = {
+        "req_id": req_id,
+        "ip_hash": ip_h,
+        "ua": ua,
+        "sid": sid,
+        "question": question,
+        "n_prior": len(messages) - 1,
+        "t0": t0,
+    }
     return StreamingResponse(
-        stream_answer(messages),
+        stream_answer(messages, meta),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
         },
+    )
+
+
+# ------------------------------- /event ----------------------------------- #
+@app.post("/api/event")
+async def event(req: Request) -> Response:
+    """Anonymous, first-party usage events (app opens, etc.). Best-effort: always
+    returns 204 and silently drops anything malformed, over-limit, or unknown."""
+    ip = client_ip(req)
+    if not event_limiter.check(ip).allowed:
+        return Response(status_code=204)
+    try:
+        body = await req.json()
+    except Exception:
+        return Response(status_code=204)
+
+    if isinstance(body, list):
+        events, sid = body, ""
+    elif isinstance(body, dict):
+        raw = body.get("events")
+        events = raw if isinstance(raw, list) else [body]
+        sid = str(body.get("sid", ""))[:40]
+    else:
+        return Response(status_code=204)
+
+    ip_h = ip_hash(ip)
+    ua = req.headers.get("user-agent", "")[:200]
+    for ev in events[:MAX_EVENTS_PER_REQ]:
+        if not isinstance(ev, dict) or ev.get("name") not in ALLOWED_EVENTS:
+            continue
+        props = ev.get("props")
+        try:
+            props_str = json.dumps(props, ensure_ascii=False)[:MAX_PROPS_CHARS] if props else ""
+        except (TypeError, ValueError):
+            props_str = ""
+        emit({
+            "event": "ux",
+            "name": ev["name"],
+            "props": props_str,
+            "sid": sid or str(ev.get("sid", ""))[:40],
+            "ip_hash": ip_h,
+            "ua": ua,
+        })
+    return Response(status_code=204)
+
+
+# ----------------------------- security.txt ------------------------------- #
+_SECURITY_TXT = (
+    "Contact: mailto:davel.radindra2@gmail.com\n"
+    "Expires: 2027-06-26T00:00:00.000Z\n"
+    "Preferred-Languages: en\n"
+    "Canonical: https://davelradindra.com/.well-known/security.txt\n"
+)
+
+
+@app.get("/.well-known/security.txt")
+async def security_txt() -> Response:
+    return PlainTextResponse(
+        _SECURITY_TXT, headers={"Cache-Control": "public, max-age=86400"}
     )
 
 

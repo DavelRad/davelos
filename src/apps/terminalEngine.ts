@@ -1,5 +1,6 @@
 import { qa, fallbackAnswer, profile } from "../data/profile";
 import { repoFiles } from "../data/repo";
+import { getSid } from "../lib/analytics";
 import type { AppId } from "../os/types";
 import type { OsBridge } from "../os/osBridge";
 
@@ -174,7 +175,8 @@ export async function askBackend(
     res = await fetch("/api/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages }),
+      // sid threads this turn to the visitor's usage session in the logs.
+      body: JSON.stringify({ messages, sid: getSid() }),
       signal,
     });
   } catch {

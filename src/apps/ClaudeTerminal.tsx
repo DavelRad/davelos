@@ -285,6 +285,10 @@ export function ClaudeTerminal({
               <span className="text-[#a8a39c]">/help</span>
             </p>
             <p className="text-[#6f6b64]">cwd: ~/davel</p>
+            <p className="text-[#6f6b64]">
+              Conversations may be logged to improve this assistant — no
+              accounts, no cookies.
+            </p>
           </div>
         </div>
 

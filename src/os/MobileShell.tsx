@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocalClock } from "../lib/useLocalClock";
 import { useDelightMotion, setReduceDelight } from "../lib/useDelightMotion";
+import { track } from "../lib/analytics";
 import { APPS, LINK_APPS } from "./apps";
 import { DockAppIcon } from "./DockIcons";
 import { OsBridgeContext, type OsBridge } from "./osBridge";
@@ -55,6 +56,7 @@ export function MobileShell({
         if (id === "github") onOpenGitHub();
         return;
       }
+      track("app_open", { app: id, source: "mobile" });
       setOrigin(
         rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null,
       );

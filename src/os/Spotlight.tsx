@@ -8,6 +8,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { cn } from "../lib/cn";
+import { track } from "../lib/analytics";
 import { useDelightMotion } from "../lib/useDelightMotion";
 import { APP_LIST, LINK_APPS } from "./apps";
 import type { AppIcon, AppId } from "./types";
@@ -146,6 +147,7 @@ export function Spotlight({
         onOpenNote(item.note);
         break;
       case "link":
+        track("contact_click", { label: item.title, source: "spotlight" });
         window.open(item.href, "_blank", "noopener,noreferrer");
         break;
       case "github":
