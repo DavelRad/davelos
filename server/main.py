@@ -36,7 +36,15 @@ from fastapi.responses import (
 
 from knowledge import system_prompt
 from ratelimit import Limits, RateLimiter
-from telemetry import A_CAP, LOG_ANSWERS, Q_CAP, clip, emit, ip_hash
+from telemetry import (
+    A_CAP,
+    LOG_ANSWERS,
+    Q_CAP,
+    classify_client,
+    clip,
+    emit,
+    ip_hash,
+)
 
 # ----------------------------- configuration ------------------------------ #
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5")
@@ -69,6 +77,7 @@ event_limiter = RateLimiter(
 # Only these anonymous frontend events are accepted; anything else is ignored.
 ALLOWED_EVENTS = {
     "session_start",
+    "engaged",
     "app_open",
     "resume_view",
     "spotlight_open",
@@ -152,6 +161,7 @@ async def stream_answer(
             "n_prior": meta["n_prior"],
             "ip_hash": meta["ip_hash"],
             "ua": meta["ua"],
+            "client": classify_client(meta["ua"]),
             "sid": meta["sid"],
             "latency_ms": round((time.perf_counter() - t0) * 1000),
             **extra,
@@ -231,17 +241,18 @@ async def ask(req: Request) -> Any:
     ua = req.headers.get("user-agent", "")[:200]
     req_id = uuid.uuid4().hex[:8]
 
+    client = classify_client(ua)
     try:
         body = await req.json()
     except Exception:
         emit({"event": "ask", "req_id": req_id, "outcome": "bad_json",
-              "ip_hash": ip_h, "ua": ua})
+              "ip_hash": ip_h, "ua": ua, "client": client})
         return JSONResponse({"error": "bad_json"}, status_code=400)
 
     messages = sanitize(body.get("messages"))
     if messages is None:
         emit({"event": "ask", "req_id": req_id, "outcome": "bad_request",
-              "ip_hash": ip_h, "ua": ua})
+              "ip_hash": ip_h, "ua": ua, "client": client})
         return JSONResponse({"error": "bad_request"}, status_code=400)
 
     question = messages[-1]["content"]
@@ -251,7 +262,8 @@ async def ask(req: Request) -> Any:
     if not decision.allowed:
         emit({"event": "ask", "req_id": req_id, "outcome": "rate_limited",
               "rl_reason": decision.reason, "question": clip(question, Q_CAP),
-              "n_prior": len(messages) - 1, "ip_hash": ip_h, "ua": ua, "sid": sid})
+              "n_prior": len(messages) - 1, "ip_hash": ip_h, "ua": ua,
+              "client": client, "sid": sid})
         return JSONResponse(
             {"error": "rate_limited", "reason": decision.reason,
              "retry_after": decision.retry_after},
@@ -303,6 +315,7 @@ async def event(req: Request) -> Response:
 
     ip_h = ip_hash(ip)
     ua = req.headers.get("user-agent", "")[:200]
+    client = classify_client(ua)
     for ev in events[:MAX_EVENTS_PER_REQ]:
         if not isinstance(ev, dict) or ev.get("name") not in ALLOWED_EVENTS:
             continue
@@ -318,6 +331,7 @@ async def event(req: Request) -> Response:
             "sid": sid or str(ev.get("sid", ""))[:40],
             "ip_hash": ip_h,
             "ua": ua,
+            "client": client,
         })
     return Response(status_code=204)
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useGitHub } from "../lib/useGitHub";
 import { setReduceDelight } from "../lib/useDelightMotion";
-import { track } from "../lib/analytics";
+import { track, armEngagement } from "../lib/analytics";
 import type { Theme } from "../lib/useTheme";
 import { useViewport } from "../lib/useViewport";
 import { APPS, LINK_APPS } from "./apps";
@@ -74,12 +74,15 @@ export function Desktop({ theme, toggleTheme, setTheme, booted }: DesktopProps) 
   useEffect(() => {
     if (sessionLogged.current) return;
     sessionLogged.current = true;
+    const shell = vp.isMobile ? "mobile" : "desktop";
     track("session_start", {
-      shell: vp.isMobile ? "mobile" : "desktop",
+      shell,
       theme,
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       ref: document.referrer || "direct",
     });
+    // fire `engaged` on the first real gesture — the human-vs-bot signal.
+    armEngagement(shell);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

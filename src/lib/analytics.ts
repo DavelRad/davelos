@@ -15,6 +15,7 @@ type Props = Record<string, string | number | boolean | null | undefined>;
 /** Mirror of ALLOWED_EVENTS in server/main.py — anything else is dropped. */
 const ALLOWED = new Set([
   "session_start",
+  "engaged",
   "app_open",
   "resume_view",
   "spotlight_open",
@@ -44,6 +45,34 @@ export function getSid(): string {
     cachedSid = "nostore";
   }
   return cachedSid;
+}
+
+let engagementArmed = false;
+
+/**
+ * Fire a single `engaged` event on the visitor's first real gesture
+ * (pointerdown / keydown / touchstart). This is the human-truth signal: JS
+ * crawlers render the page and fire `session_start`, but essentially never
+ * dispatch a deliberate gesture — so `engaged` cleanly separates humans from
+ * bots on both shells. Fires at most once per page load, then unbinds.
+ */
+export function armEngagement(shell: "desktop" | "mobile"): void {
+  if (engagementArmed || typeof window === "undefined") return;
+  engagementArmed = true;
+  const t0 = Date.now();
+  const fire = () => {
+    window.removeEventListener("pointerdown", fire);
+    window.removeEventListener("keydown", fire);
+    window.removeEventListener("touchstart", fire);
+    track("engaged", { shell, ms: Date.now() - t0 });
+  };
+  try {
+    window.addEventListener("pointerdown", fire, { passive: true });
+    window.addEventListener("keydown", fire, { passive: true });
+    window.addEventListener("touchstart", fire, { passive: true });
+  } catch {
+    /* best-effort */
+  }
 }
 
 /** Emit one anonymous usage event. No-op for unknown names; never throws. */
