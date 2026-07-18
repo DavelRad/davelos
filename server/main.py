@@ -5,11 +5,12 @@ Endpoints
   GET  /api/health   -> liveness probe
   POST /api/ask      -> streaming (SSE) answer from Claude, grounded in the
                         Davel knowledge base, rate-limited per IP + globally.
-  GET  /api/spotify  -> Davel's now-playing + top tracks (ported from the old
-                        Vercel function so everything lives in one service).
+  GET  /api/spotify  -> Davel's now-playing + top tracks, so the whole site
+                        (UI + API) lives in one service.
 
-The whole thing is fronted by Firebase Hosting, which rewrites `/api/**` to this
-Cloud Run service — so to the browser it's all one origin (davelradindra.com).
+This single Cloud Run service builds the React SPA and serves it alongside
+`/api/*`, so to the browser it's all one origin (davelradindra.com) — no
+separate API host, no Firebase, no CORS.
 
 Anthropic prompt-caching is applied to the (large, static) system prompt, so
 repeat questions cost ~90% less on input tokens. If ANTHROPIC_API_KEY is unset,
@@ -94,7 +95,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=(
         r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
-        r"|^https://([a-z0-9-]+\.)*(davelradindra\.com|web\.app|firebaseapp\.com|run\.app)$"
+        r"|^https://([a-z0-9-]+\.)*(davelradindra\.com|run\.app)$"
     ),
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type"],

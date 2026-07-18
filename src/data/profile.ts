@@ -165,8 +165,7 @@ export const contactLinks: ContactLink[] = [
   {
     label: "X / Twitter",
     value: "@davelradindra",
-    // TODO: real handle — placeholder until confirmed
-    href: "https://x.com/",
+    href: "https://x.com/davelradindra",
   },
   {
     label: "Website",

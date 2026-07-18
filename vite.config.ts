@@ -6,8 +6,9 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   // Local dev: proxy /api to the FastAPI bot running on :8080 (run it with
-  // `uvicorn main:app --port 8080` from server/). In prod, Firebase Hosting
-  // rewrites /api/** to Cloud Run, so the same-origin calls work unchanged.
+  // `uvicorn main:app --port 8080` from server/). In prod the same Cloud Run
+  // service serves both the SPA and /api, so these same-origin calls work
+  // unchanged.
   server: {
     proxy: {
       "/api": { target: "http://localhost:8080", changeOrigin: true },
