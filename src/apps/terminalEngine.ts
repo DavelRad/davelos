@@ -160,8 +160,8 @@ export type AskOutcome =
 /**
  * Stream a real, grounded answer from the FastAPI `/api/ask` backend, invoking
  * `onDelta` with each text chunk as it arrives. Same-origin `/api` works in
- * prod (Firebase rewrites it to Cloud Run) and in dev (Vite proxies it to the
- * local FastAPI server). On "offline" | "error" the caller should fall back to
+ * prod (one Cloud Run service serves the SPA + API) and in dev (Vite proxies it
+ * to the local FastAPI server). On "offline" | "error" the caller should fall back to
  * the built-in canned answer from `route`, so the terminal works with no
  * backend at all.
  */

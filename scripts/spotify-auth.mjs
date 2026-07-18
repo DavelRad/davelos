@@ -101,7 +101,7 @@ const server = http.createServer(async (req, res) => {
     console.log("✓ SUCCESS — copy your REFRESH TOKEN:");
     console.log("==================================================\n");
     console.log(data.refresh_token);
-    console.log("\nThen set these env vars (in Vercel, and in ~/portfolio/.env.local for local dev):");
+    console.log("\nThen set these as Cloud Run secrets (see DEPLOY.md), and in server/.env for local dev:");
     console.log("  SPOTIFY_CLIENT_ID=" + CLIENT_ID);
     console.log("  SPOTIFY_CLIENT_SECRET=<your secret>");
     console.log("  SPOTIFY_REFRESH_TOKEN=<the token above>");

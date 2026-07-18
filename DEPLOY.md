@@ -7,7 +7,7 @@ serves the static site plus `/api/*`. One service, one origin, no Firebase, no C
 - **Project:** `davel-portfolio`
 - **Region:** `us-central1`
 - **Service:** `davelos`
-- **Live URL:** https://davelos-630783796094.us-central1.run.app
+- **Live URL:** https://davelradindra.com
 
 > **Never put your Anthropic API key in a file, the repo, or chat.** It lives only
 > in **GCP Secret Manager**; Cloud Run reads it at runtime.
@@ -15,6 +15,7 @@ serves the static site plus `/api/*`. One service, one origin, no Firebase, no C
 ```bash
 export PROJECT_ID=davel-portfolio
 export REGION=us-central1
+export PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
 ```
 
 ---
@@ -28,7 +29,7 @@ reference / reproducing in a fresh project):
 gcloud auth login
 gcloud projects create "$PROJECT_ID" --name="Davel Portfolio"
 gcloud config set project "$PROJECT_ID"
-gcloud billing projects link "$PROJECT_ID" --billing-account=0171B8-386221-6A71D4
+gcloud billing projects link "$PROJECT_ID" --billing-account=<YOUR_BILLING_ACCOUNT_ID>
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
   artifactregistry.googleapis.com secretmanager.googleapis.com
 
@@ -53,7 +54,7 @@ printf "%s" "sk-ant-XXXXXXXX" | gcloud secrets create anthropic-api-key --data-f
 
 # let Cloud Run's runtime service account read it
 gcloud secrets add-iam-policy-binding anthropic-api-key \
-  --member="serviceAccount:630783796094-compute@developer.gserviceaccount.com" \
+  --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 
 # bind it to the service (creates a new revision)
@@ -61,7 +62,7 @@ gcloud run services update davelos --region us-central1 \
   --update-secrets ANTHROPIC_API_KEY=anthropic-api-key:latest
 ```
 
-Verify: `curl https://davelos-630783796094.us-central1.run.app/api/health`
+Verify: `curl https://davelradindra.com/api/health`
 should now show `"ask_enabled":true`.
 
 > Spotify is optional — add `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`,
@@ -81,7 +82,7 @@ deploy — these env vars only tune it:
   ```bash
   printf "%s" "$(openssl rand -hex 16)" | gcloud secrets create log-salt --data-file=-
   gcloud secrets add-iam-policy-binding log-salt \
-    --member="serviceAccount:630783796094-compute@developer.gserviceaccount.com" \
+    --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor"
   gcloud run services update davelos --region us-central1 \
     --update-secrets LOG_SALT=log-salt:latest
