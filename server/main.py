@@ -465,6 +465,21 @@ if os.path.isdir(_STATIC_DIR):
                 else "public, max-age=86400"
             )
             return FileResponse(candidate, headers={"Cache-Control": cache})
-        # the SPA shell must NOT be cached, so a refresh always loads the current
-        # asset filenames (otherwise a stale index.html → 404s → blank page).
-        return FileResponse(_INDEX, headers={"Cache-Control": "no-cache, must-revalidate"})
+
+        # A request that clearly targets a static FILE — a hashed /assets/* bundle
+        # or anything with a file extension — but didn't resolve above must 404,
+        # NOT fall back to index.html. Serving HTML for a missing .js makes the
+        # browser reject it as a module ("Expected a JavaScript module script but
+        # got MIME type text/html") and the page renders blank. That happens when
+        # a stale, cached index.html points at an asset hash from a prior deploy.
+        if full_path.startswith("assets/") or os.path.splitext(full_path)[1]:
+            return JSONResponse({"error": "not_found"}, status_code=404)
+
+        # SPA shell for app routes. no-store (not no-cache): the shell must NEVER
+        # be served from cache. no-cache still lets the browser store it and, on a
+        # reopened tab / session restore (notably Safari), reuse it WITHOUT
+        # revalidating — loading an index.html that points at deploy-rotated asset
+        # hashes that no longer exist → blank page until a hard refresh. The shell
+        # is ~1.3KB; refetching it every navigation is free and is the only
+        # reliable guarantee the browser gets asset filenames that actually exist.
+        return FileResponse(_INDEX, headers={"Cache-Control": "no-store"})
