@@ -462,12 +462,15 @@ if os.path.isdir(_STATIC_DIR):
             and os.path.isfile(candidate)
             and os.path.basename(candidate) != "index.html"
         ):
-            # hashed build assets are immutable; other static files cache a day
-            cache = (
-                "public, max-age=31536000, immutable"
-                if full_path.startswith("assets/")
-                else "public, max-age=86400"
-            )
+            # hashed build assets are immutable; sw.js must revalidate so the
+            # kill-switch worker reliably reaches returning visitors; everything
+            # else caches a day.
+            if full_path.startswith("assets/"):
+                cache = "public, max-age=31536000, immutable"
+            elif full_path == "sw.js":
+                cache = "no-cache"
+            else:
+                cache = "public, max-age=86400"
             return FileResponse(candidate, headers={"Cache-Control": cache})
 
         # A request that clearly targets a static FILE — a hashed /assets/* bundle
