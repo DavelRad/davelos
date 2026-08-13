@@ -445,7 +445,11 @@ _STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 if os.path.isdir(_STATIC_DIR):
     _INDEX = os.path.join(_STATIC_DIR, "index.html")
 
-    @app.get("/{full_path:path}")
+    # GET + HEAD: a GET document route should answer HEAD too. Starlette adds
+    # HEAD automatically for plain routes, but FastAPI's @app.get does not, so
+    # the catch-all was 405-ing every HEAD probe (uptime monitors, crawlers, and
+    # some page-injecting browser extensions that HEAD "/" before rendering).
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
     async def spa(full_path: str) -> Any:
         if full_path.startswith("api/"):
             return JSONResponse({"error": "not_found"}, status_code=404)
